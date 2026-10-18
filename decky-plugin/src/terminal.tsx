@@ -4,6 +4,7 @@ import { addEventListener, callable, removeEventListener } from "@decky/api";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { useEffect, useRef, useState } from "react";
+import { getState } from "./store";
 import xtermCss from "./xterm-css";
 
 const termOpen = callable<[number, number], { ok: boolean; error?: string }>("term_open");
@@ -143,7 +144,7 @@ export function ClaudeTerminal() {
     if (!el) return;
     injectCss(el.ownerDocument);
     const term = new Terminal({
-      fontFamily: '"DejaVu Sans Mono", "Noto Sans Mono", monospace', fontSize: 15, cursorBlink: true,
+      fontFamily: '"DejaVu Sans Mono", "Noto Sans Mono", monospace', fontSize: getState().settings.font_size, cursorBlink: true,
       scrollback: 5000, allowProposedApi: false,
       theme: { background: "#101215", foreground: "#dcdedf", cursor: "#d97757", selectionBackground: "#d9775755" },
     });

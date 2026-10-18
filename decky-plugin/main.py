@@ -17,6 +17,7 @@ import json
 import fcntl
 import os
 import pty
+import re
 import signal
 import struct
 import subprocess
@@ -34,6 +35,9 @@ TOAST_SPOOL = STATE / "toasts"
 ALIVE = STATE / "decky-alive"
 SESSION_CMD = str(HOME / ".local/bin/claude-session")
 SPOOL_SECONDS = 0.5
+CONFIG = HOME / ".config/claude-deck/config"
+# Panel settings in the config file: (default, min, max)
+PANEL_SETTINGS = {"PANEL_WIDTH": (70, 30, 100), "PANEL_FONT_SIZE": (15, 8, 40)}
 FLUSH_SECONDS = 0.015   # batch output into ~60 events/s at most
 MAX_CHUNK = 64 * 1024
 
@@ -133,6 +137,21 @@ class Terminal:
 TERM = Terminal()
 
 
+def _read_panel_settings():
+    """PANEL_* values from ~/.config/claude-deck/config (shell syntax; only plain numbers are read)."""
+    values = {k: d for k, (d, _, _) in PANEL_SETTINGS.items()}
+    try:
+        lines = CONFIG.read_text().splitlines()
+    except OSError:
+        lines = []
+    for line in lines:
+        m = re.match(r"""\s*(PANEL_[A-Z_]+)\s*=\s*["']?(\d+)%?["']?\s*(#.*)?$""", line)
+        if m and m.group(1) in PANEL_SETTINGS:
+            _, lo, hi = PANEL_SETTINGS[m.group(1)]
+            values[m.group(1)] = min(hi, max(lo, int(m.group(2))))
+    return values
+
+
 def _claude_installed():
     return (HOME / ".local/bin/claude").exists() or any(
         Path(d, "claude").exists() for d in ("/usr/local/bin", "/usr/bin"))
@@ -199,6 +218,10 @@ class Plugin:
             names = []
         return {"running": bool(names), "session": names[0] if names else None,
                 "claude_installed": _claude_installed(), "scripts_installed": Path(SESSION_CMD).exists()}
+
+    async def get_settings(self) -> dict:
+        v = _read_panel_settings()
+        return {"panel_width": v["PANEL_WIDTH"], "font_size": v["PANEL_FONT_SIZE"]}
 
     async def session_start(self, new: bool = False) -> dict:
         return await _session_cmd("--ensure", new=new)

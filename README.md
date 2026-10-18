@@ -55,28 +55,41 @@ Options: `--add-to-steam` (library shortcut), `--no-plugin`, `--no-claude`. Remo
 
 ## Using it
 
-**Game Mode panel** (✳ in the status bar, or Quick Access menu > Claude Deck > Open):
+> **Full guide with every button, gesture and setting: [docs/usage.md](docs/usage.md).**
 
-| Button | Action |
+**Open** the panel with the **✳ icon** in Steam's status bar, or <kbd>…</kbd> Quick Access menu > **Claude Deck**.
+**Close** it with <kbd>B</kbd>: Claude keeps working and sends a Steam toast when it needs you.
+
+| Button | In the panel |
 |---|---|
-| A | Enter |
-| B | close the panel (Claude keeps running) |
-| X | Shift+Tab (switch Claude's mode) |
-| Y | on-screen keyboard, typing into Claude's prompt |
-| D-pad / left stick | arrow keys |
-| LT | Esc (twice: rewind) |
-| RT (hold) | Space, held (push-to-talk in `/voice` hold mode) |
-| LB / RB | Page Up / Page Down |
-| Menu ≡ | `/` (slash commands) |
-| View | Tab |
-| Touchscreen | drag to scroll, tap to click |
+| <kbd>A</kbd> | **Enter**: send, confirm a choice |
+| <kbd>B</kbd> | **Close the panel** (Claude keeps running) |
+| <kbd>X</kbd> | **Shift+Tab**: switch Claude's mode |
+| <kbd>Y</kbd> | **Steam keyboard**, typing straight into Claude's prompt |
+| <kbd>D-pad</kbd> / left stick | **Arrow keys**: menus, prompts, message history, cursor |
+| <kbd>LT</kbd> | **Esc**: interrupt Claude; twice on an empty prompt = rewind |
+| <kbd>RT</kbd> hold | **Space, held**: push-to-talk in `/voice` hold mode |
+| <kbd>LB</kbd> / <kbd>RB</kbd> | **Page Up / Page Down** |
+| <kbd>☰</kbd> Menu | **`/`**: start a slash command |
+| <kbd>⧉</kbd> View | **Tab**: autocomplete |
+| Touchscreen | **drag** to scroll, **tap** to click |
 
-**Desktop Mode**: run `claude-session` in a terminal to join the same session (not plain `claude`, which would
-start a separate one). `claude-session --help` lists the other commands.
+**Quick Access menu > Claude Deck:** **Start Claude** (continue) · **Start a new conversation** ·
+**New conversation** · **Stop session** · **Open Claude panel**.
 
-**Settings**: `~/.config/claude-deck/config`. It holds the project folder Claude works in (default `~/Claude`) and
-the Remote Control name (off by default). Restart the session after changing them (Quick Access menu > Stop
-session, then Start).
+**Desktop Mode:** run `claude-session` in a terminal to join the same session (not plain `claude`, which would start
+a separate one). `claude-session --help` lists the other commands.
+
+### Settings
+
+`~/.config/claude-deck/config`:
+
+| Setting | Default | |
+|---|---|---|
+| `PANEL_WIDTH` | `70` | Panel width, % of the screen (30–100). Next panel open. |
+| `PANEL_FONT_SIZE` | `15` | Terminal font size, px (8–40). Next panel open. |
+| `PROJECT_DIR` | `"$HOME/Claude"` | Folder Claude works in. After Stop + Start. |
+| `REMOTE_CONTROL_NAME` | `""` (off) | Claude Code Remote Control name. After Stop + Start. |
 
 ## How it works
 

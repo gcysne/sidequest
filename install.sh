@@ -41,7 +41,8 @@ command -v xterm >/dev/null || warn "xterm not found: the optional Steam library
 mkdir -p "$CONF_DIR"
 if [[ ! -f "$CONF" ]]; then
     cat > "$CONF" <<EOF
-# claude-deck settings (shell syntax). After changing them: claude-session --stop, then start it again.
+# claude-deck settings (shell syntax). Session settings apply after Stop + Start (Quick Access menu > Claude Deck);
+# panel settings apply the next time the panel opens.
 
 # Folder the persistent Claude Code session works in (its project). Created if missing.
 PROJECT_DIR="${CLAUDE_DECK_PROJECT:-\$HOME/Claude}"
@@ -50,10 +51,18 @@ PROJECT_DIR="${CLAUDE_DECK_PROJECT:-\$HOME/Claude}"
 # Empty = Remote Control off.
 REMOTE_CONTROL_NAME=""
 EOF
-    say "settings: $CONF (project folder, Remote Control)"
+    say "settings: $CONF"
 else
     say "settings: keeping $CONF"
 fi
+# Settings added in later versions: append the ones an existing file doesn't have yet.
+add_setting() { # KEY VALUE COMMENT
+    grep -qE "^[[:space:]]*$1=" "$CONF" && return
+    printf '\n# %s\n%s=%s\n' "$3" "$1" "$2" >> "$CONF"
+    say "settings: added $1=$2"
+}
+add_setting PANEL_WIDTH 70 "Game Mode panel width, percent of the screen (30-100). Applies the next time the panel opens."
+add_setting PANEL_FONT_SIZE 15 "Game Mode panel font size in pixels (8-40). Applies the next time the panel opens."
 # shellcheck source=lib/common.sh
 . "$SRC/lib/common.sh"
 mkdir -p "$PROJECT_DIR"

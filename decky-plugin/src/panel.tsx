@@ -1,19 +1,20 @@
 // Right-side, full-height panel. Opened as a Steam modal so it gets its own gamepad focus tree
 // and native B / Esc handling; CSS turns the centered dialog into a side panel.
 import { ModalRoot, showModal } from "@decky/ui";
+import { callable } from "@decky/api";
 import { useEffect, useState } from "react";
-import { getState, setState, subscribe } from "./store";
+import { DEFAULT_SETTINGS, Settings, getState, setState, subscribe } from "./store";
 import { ClaudeTerminal } from "./terminal";
 
-const WIDTH = "58vw"; // TODO: setting
+const getSettings = callable<[], Settings>("get_settings");
 const CSS_ID = "claude-deck-panel-css";
 // Steam's gamepad UI keeps a 40px status bar on top and a 42px button-hint footer at the bottom;
 // the panel sits between them so neither hides the header or the input row.
 const TOP = "40px";
 const BOTTOM = "42px";
-const CSS = `
+const css = (width: number) => `
 .claude-deck-modal { position: fixed !important; top: ${TOP} !important; right: 0 !important; bottom: ${BOTTOM} !important;
-  left: auto !important; width: ${WIDTH} !important; max-width: none !important; height: auto !important;
+  left: auto !important; width: ${width}vw !important; max-width: none !important; height: auto !important;
   max-height: none !important; margin: 0 !important; border-radius: 0 !important; padding: 0 !important;
   background: #1a2029 !important; box-shadow: -12px 0 40px rgba(0,0,0,0.8) !important; display: flex !important;
   flex-direction: column !important; transform: none !important; z-index: 10000 !important; }
@@ -31,14 +32,14 @@ function markClosed() {
   setState({ panelOpen: false });
 }
 
-function ensureCss(doc: Document) {
+function ensureCss(doc: Document, width: number) {
   let s = doc.getElementById(CSS_ID);
   if (!s) {
     s = doc.createElement("style");
     s.id = CSS_ID;
     doc.head.appendChild(s);
   }
-  s.textContent = CSS; // overwrite: a reinstalled plugin may bring new CSS
+  s.textContent = css(width); // overwrite: settings or a reinstalled plugin may change it
 }
 
 function PanelBody({ close }: { close: () => void }) {
@@ -65,11 +66,19 @@ function PanelBody({ close }: { close: () => void }) {
   );
 }
 
-export function openClaudePanel() {
+let opening = false;
+
+export async function openClaudePanel() {
+  if (handle || opening) return;
+  opening = true;
+  let settings = DEFAULT_SETTINGS;
+  try { settings = await getSettings(); } catch { /* keep defaults */ }
+  opening = false;
   if (handle) return;
+  setState({ settings });
   const win = (window as any).SteamUIStore?.WindowStore?.GamepadUIMainWindowInstance?.BrowserWindow
     ?? (window as any).SteamUIStore?.WindowStore?.SteamUIWindows?.[0]?.BrowserWindow;
-  if (win?.document) ensureCss(win.document);
+  if (win?.document) ensureCss(win.document, settings.panel_width);
   // Reset our state ourselves: Steam does not always call fnOnClose (e.g. when B/Esc closes it).
   const close = () => { const h = handle; markClosed(); h?.Close(); };
   handle = showModal(
