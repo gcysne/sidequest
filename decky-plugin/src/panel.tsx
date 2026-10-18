@@ -53,7 +53,7 @@ function PanelBody({ close }: { close: () => void }) {
         <span style={{ fontSize: 12, padding: "3px 9px", borderRadius: 10, background: s.running ? "#59bf4033" : "#e0484833" }}>
           {s.running ? "session running" : "no session"}
         </span>
-        <Focusable preferredFocus onActivate={close} onClick={close} onCancelButton={close}
+        <Focusable onActivate={close} onClick={close} onCancelButton={close}
           style={{ marginLeft: "auto", padding: "5px 12px", borderRadius: 5, background: "#ffffff14", cursor: "pointer" }}>
           B  Close
         </Focusable>

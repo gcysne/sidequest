@@ -11,17 +11,38 @@ const TAG = "[claude-deck]";
 type Memo = { $$typeof: symbol; type: (props: any) => any };
 let patched: { memo: Memo; orig: (props: any) => any; wrapper: (props: any) => any } | null = null;
 
+// Steam's status-bar icons share a few (minified, version-specific) classes that carry their size and the
+// gamepad focus highlight. Copy whatever classes all focusable neighbours have in common, so the icon is
+// highlighted like the others without hard-coding Steam's class names.
+function siblingClasses(el: HTMLElement): string[] {
+  const sibs = [...(el.parentElement?.children ?? [])].filter(
+    (e) => e !== el && e.getAttribute("tabindex") !== null && e.getAttribute("role") !== null,
+  ) as HTMLElement[];
+  if (!sibs.length) return [];
+  let common = [...sibs[0].classList];
+  for (const e of sibs.slice(1)) common = common.filter((c) => e.classList.contains(c));
+  return common.filter((c) => c !== "Panel" && c !== "Focusable");
+}
+
 function ClaudeIcon() {
   const [s, set] = useState(getState());
+  const [extra, setExtra] = useState("");
   useEffect(() => subscribe(() => set(getState())), []);
+  const ref = (el: HTMLElement | null) => {
+    if (!el || extra) return;
+    const c = siblingClasses(el).join(" ");
+    if (c) setExtra(c);
+  };
   if (!s.running) return null;
   return (
     <Focusable
-      className="claude-deck-icon"
+      ref={ref as any}
+      className={`claude-deck-icon ${extra}`}
       onActivate={() => openPanel()}
       onClick={() => openPanel()}
-      style={{ display: "flex", alignItems: "center", height: "100%", padding: "0 8px",
-               color: "#d97757", fontSize: "22px", fontWeight: 700, cursor: "pointer" }}
+      style={{ display: "flex", alignItems: "center", justifyContent: "center",
+               color: "#d97757", fontSize: "22px", fontWeight: 700, cursor: "pointer",
+               ...(extra ? {} : { height: "100%", padding: "0 8px" }) }}
     >
       {"✳"}
     </Focusable>

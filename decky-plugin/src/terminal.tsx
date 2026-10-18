@@ -65,6 +65,10 @@ export function ClaudeTerminal() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const inputBox = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const textRef = useRef("");
+  textRef.current = text;
+  const nativeOk = useRef(false); // lets our own synthetic A through to the text field (opens the keyboard)
   const spaceTimer = useRef<number | null>(null);
 
   const stopSpace = () => {
@@ -72,13 +76,46 @@ export function ClaudeTerminal() {
   };
   useEffect(() => stopSpace, []);
 
+  const inputEl = () => inputBox.current?.querySelector("input") as HTMLInputElement | null;
+
+  // Y: focus the text box and give it an A press, which is how Steam's text fields open the on-screen keyboard.
   const openKeyboard = () => {
-    const input = inputBox.current?.querySelector("input") as HTMLInputElement | null;
+    const input = inputEl();
     if (!input) return;
     input.focus();
-    const vk = (window as any).SteamUIStore?.WindowStore?.GamepadUIMainWindowInstance?.VirtualKeyboardManager;
-    try { vk?.SetVirtualKeyboardVisible?.(); } catch { /* the focused field still opens it on A */ }
+    nativeOk.current = true;
+    try {
+      input.dispatchEvent(new CustomEvent("vgp_onok", { bubbles: true, cancelable: true,
+        detail: { button: GamepadButton.OK, source: 1, is_repeat: false } }));
+    } finally { nativeOk.current = false; }
   };
+
+  // Steam delivers gamepad input as DOM events (vgp_onok, vgp_onoptions, ...) to the focused element, and the
+  // text field would handle A itself (open the keyboard). Listening in the capture phase on the panel root runs
+  // first, so A always sends and Y always opens the keyboard.
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const onOk = (e: Event) => {
+      if (nativeOk.current) return;
+      if (!inputBox.current?.contains(e.target as Node)) return; // terminal / Send: their own A handlers
+      e.preventDefault(); e.stopPropagation();
+      sendRef.current();
+    };
+    const onOptions = (e: Event) => {
+      e.preventDefault(); e.stopPropagation();
+      if (!(e as CustomEvent).detail?.is_repeat) openKeyboard();
+    };
+    el.addEventListener("vgp_onok", onOk, true);
+    el.addEventListener("vgp_onoptions", onOptions, true);
+    // Start with the text box focused, ready for Y / typing.
+    const t = window.setTimeout(() => inputEl()?.focus(), 250);
+    return () => {
+      el.removeEventListener("vgp_onok", onOk, true);
+      el.removeEventListener("vgp_onoptions", onOptions, true);
+      clearTimeout(t);
+    };
+  }, []);
 
   const onButtonDown = (evt: any) => {
     trace("down", evt);
@@ -93,8 +130,6 @@ export function ClaudeTerminal() {
           termInput(" ");
         }, SPACE_REPEAT_MS);
       }
-    } else if (b === GamepadButton.OPTIONS) {
-      if (!repeat) openKeyboard();
     } else if (b in BUTTON_KEYS) {
       if (repeat && !REPEATS.has(b)) return;
       termInput(BUTTON_KEYS[b]);
@@ -160,15 +195,18 @@ export function ClaudeTerminal() {
   }, []);
 
   const send = () => {
-    if (!text) { termInput("\r"); return; }
-    termInput(text);
+    const t = textRef.current;
+    if (!t) { termInput("\r"); return; }
+    termInput(t);
     setTimeout(() => termInput("\r"), 30); // Claude Code treats a pasted burst + Enter as one submit
     setText("");
   };
+  const sendRef = useRef(send);
+  sendRef.current = send;
 
   // Button mapping sits on the outer Focusable so it also works while the text box or Send has focus.
   return (
-    <Focusable onButtonDown={onButtonDown} onButtonUp={onButtonUp}
+    <Focusable ref={root} onButtonDown={onButtonDown} onButtonUp={onButtonUp}
       style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Focusable
         noFocusRing={false}
@@ -189,7 +227,9 @@ export function ClaudeTerminal() {
       <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px" }}>
         <div ref={inputBox} style={{ flex: 1 }}
              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }}>
-          <TextField value={text} onChange={(e) => setText(e.target.value)} />
+          <Focusable preferredFocus onOKActionDescription="Send" onOptionsActionDescription="Keyboard">
+            <TextField value={text} onChange={(e) => setText(e.target.value)} />
+          </Focusable>
         </div>
         <Focusable onActivate={send} onClick={send}
           style={{ height: 40, padding: "0 16px", borderRadius: 6, background: "#d97757", color: "#1b0f0a",
