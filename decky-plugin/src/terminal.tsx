@@ -1,5 +1,5 @@
 // Live view of the Claude tmux session inside the panel (xterm.js + backend pty bridge).
-import { Focusable, GamepadButton, TextField } from "@decky/ui";
+import { Focusable, GamepadButton } from "@decky/ui";
 import { addEventListener, callable, removeEventListener } from "@decky/api";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -59,16 +59,19 @@ function b64ToBytes(b64: string) {
   return out;
 }
 
+// Steam's on-screen keyboard belongs to the window that shows the panel.
+function keyboardManager(doc: Document): any {
+  const store = (window as any).SteamUIStore?.WindowStore;
+  const wins: any[] = [...(store?.SteamUIWindows ?? [])];
+  const inst = wins.find((w) => (w.m_BrowserWindow ?? w.BrowserWindow)?.document === doc) ?? store?.GamepadUIMainWindowInstance;
+  return inst?.VirtualKeyboardManager ?? inst?.m_VirtualKeyboardManager;
+}
+
 export function ClaudeTerminal() {
   const host = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [text, setText] = useState("");
-  const inputBox = useRef<HTMLDivElement>(null);
-  const root = useRef<HTMLDivElement>(null);
-  const textRef = useRef("");
-  textRef.current = text;
-  const nativeOk = useRef(false); // lets our own synthetic A through to the text field (opens the keyboard)
   const spaceTimer = useRef<number | null>(null);
 
   const stopSpace = () => {
@@ -76,45 +79,27 @@ export function ClaudeTerminal() {
   };
   useEffect(() => stopSpace, []);
 
-  const inputEl = () => inputBox.current?.querySelector("input") as HTMLInputElement | null;
-
-  // Y: focus the text box and give it an A press, which is how Steam's text fields open the on-screen keyboard.
+  // Y: Steam's keyboard types into xterm's hidden textarea, so text goes straight into Claude Code's prompt
+  // (one place to type, dictate and edit). Verified on the Legion Go, 2026-10-18.
   const openKeyboard = () => {
-    const input = inputEl();
-    if (!input) return;
-    input.focus();
-    nativeOk.current = true;
-    try {
-      input.dispatchEvent(new CustomEvent("vgp_onok", { bubbles: true, cancelable: true,
-        detail: { button: GamepadButton.OK, source: 1, is_repeat: false } }));
-    } finally { nativeOk.current = false; }
+    const ta = termRef.current?.textarea;
+    if (!ta) return;
+    ta.focus();
+    try { keyboardManager(ta.ownerDocument)?.CreateVirtualKeyboardRef({})?.ShowVirtualKeyboard(); }
+    catch (e) { console.warn("claude-deck: could not open the keyboard", e); }
   };
 
-  // Steam delivers gamepad input as DOM events (vgp_onok, vgp_onoptions, ...) to the focused element, and the
-  // text field would handle A itself (open the keyboard). Listening in the capture phase on the panel root runs
-  // first, so A always sends and Y always opens the keyboard.
+  // Steam delivers gamepad input as DOM events (vgp_onoptions, ...); catch Y in the capture phase so nothing
+  // else in the panel handles it first.
   useEffect(() => {
     const el = root.current;
     if (!el) return;
-    const onOk = (e: Event) => {
-      if (nativeOk.current) return;
-      if (!inputBox.current?.contains(e.target as Node)) return; // terminal / Send: their own A handlers
-      e.preventDefault(); e.stopPropagation();
-      sendRef.current();
-    };
     const onOptions = (e: Event) => {
       e.preventDefault(); e.stopPropagation();
       if (!(e as CustomEvent).detail?.is_repeat) openKeyboard();
     };
-    el.addEventListener("vgp_onok", onOk, true);
     el.addEventListener("vgp_onoptions", onOptions, true);
-    // Start with the text box focused, ready for Y / typing.
-    const t = window.setTimeout(() => inputEl()?.focus(), 250);
-    return () => {
-      el.removeEventListener("vgp_onok", onOk, true);
-      el.removeEventListener("vgp_onoptions", onOptions, true);
-      clearTimeout(t);
-    };
+    return () => el.removeEventListener("vgp_onoptions", onOptions, true);
   }, []);
 
   const onButtonDown = (evt: any) => {
@@ -134,7 +119,7 @@ export function ClaudeTerminal() {
       if (repeat && !REPEATS.has(b)) return;
       termInput(BUTTON_KEYS[b]);
     } else {
-      return; // A, B, directions: handled by their own props / Steam
+      return; // A, B, Y, directions: handled elsewhere
     }
     evt.preventDefault?.(); evt.stopPropagation?.();
   };
@@ -144,10 +129,10 @@ export function ClaudeTerminal() {
     if (evt?.detail?.button === GamepadButton.TRIGGER_RIGHT) stopSpace();
   };
 
+  // The D-pad always sends arrows; consuming the event keeps gamepad focus on the terminal.
   const onDirection = (evt: any) => {
     trace("dir", evt);
-    const b = evt?.detail?.button;
-    const key = ARROWS[b];
+    const key = ARROWS[evt?.detail?.button];
     if (!key) return;
     termInput(key);
     evt.preventDefault?.(); evt.stopPropagation?.();
@@ -183,9 +168,41 @@ export function ClaudeTerminal() {
     });
     ro.observe(el);
 
+    // Touch drag scrolls: every row the finger moves becomes one SGR mouse-wheel event at the finger's cell.
+    // tmux (mouse on) hands it to Claude Code's full-screen view or scrolls its own history, like the
+    // touch-scroll bindings of the Claude Code shortcut. Finger down = content follows = wheel up.
+    let lastY: number | null = null;
+    const cellOf = (t: Touch) => {
+      const r = el.getBoundingClientRect();
+      const col = Math.min(term.cols, Math.max(1, Math.floor(((t.clientX - r.left) / r.width) * term.cols) + 1));
+      const row = Math.min(term.rows, Math.max(1, Math.floor(((t.clientY - r.top) / r.height) * term.rows) + 1));
+      return { col, row, rowPx: r.height / term.rows };
+    };
+    const onTouchStart = (e: TouchEvent) => { lastY = e.touches.length === 1 ? e.touches[0].clientY : null; };
+    const onTouchMove = (e: TouchEvent) => {
+      if (lastY === null || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      const { col, row, rowPx } = cellOf(t);
+      const steps = Math.trunc((t.clientY - lastY) / rowPx);
+      if (steps === 0) return;
+      e.preventDefault();
+      const code = steps > 0 ? 64 : 65;
+      termInput(`\x1b[<${code};${col};${row}M`.repeat(Math.min(Math.abs(steps), 10)));
+      lastY += steps * rowPx;
+    };
+    const onTouchEnd = () => { lastY = null; };
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+
     return () => {
       ro.disconnect();
       dataSub.dispose();
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
       removeEventListener("term_output", onOutput);
       removeEventListener("term_exit", onExit);
       termClose();
@@ -194,49 +211,26 @@ export function ClaudeTerminal() {
     };
   }, []);
 
-  const send = () => {
-    const t = textRef.current;
-    if (!t) { termInput("\r"); return; }
-    termInput(t);
-    setTimeout(() => termInput("\r"), 30); // Claude Code treats a pasted burst + Enter as one submit
-    setText("");
-  };
-  const sendRef = useRef(send);
-  sendRef.current = send;
-
-  // Button mapping sits on the outer Focusable so it also works while the text box or Send has focus.
   return (
     <Focusable ref={root} onButtonDown={onButtonDown} onButtonUp={onButtonUp}
       style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Focusable
+        preferredFocus
         noFocusRing={false}
         onActivate={() => termInput("\r")}
         onGamepadDirection={onDirection}
         onOKActionDescription="Enter"
         onSecondaryActionDescription="Shift+Tab"
         onOptionsActionDescription="Keyboard"
-        style={{ flex: 1, minHeight: 0, margin: "10px 12px 0", borderRadius: 6, background: "#101215",
+        style={{ flex: 1, minHeight: 0, margin: "10px 12px 12px", borderRadius: 6, background: "#101215",
                  padding: "8px 10px", border: "1px solid #ffffff14", position: "relative" }}
       >
-        <div ref={host} style={{ width: "100%", height: "100%" }} />
+        <div ref={host} style={{ width: "100%", height: "100%", touchAction: "none" }} />
         {error && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                         background: "#101215e0", color: "#f0a07f" }}>{error}</div>
         )}
       </Focusable>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px" }}>
-        <div ref={inputBox} style={{ flex: 1 }}
-             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }}>
-          <Focusable preferredFocus onOKActionDescription="Send" onOptionsActionDescription="Keyboard">
-            <TextField value={text} onChange={(e) => setText(e.target.value)} />
-          </Focusable>
-        </div>
-        <Focusable onActivate={send} onClick={send}
-          style={{ height: 40, padding: "0 16px", borderRadius: 6, background: "#d97757", color: "#1b0f0a",
-                   fontWeight: 700, display: "flex", alignItems: "center", cursor: "pointer" }}>
-          Send
-        </Focusable>
-      </div>
     </Focusable>
   );
 }

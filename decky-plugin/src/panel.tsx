@@ -1,6 +1,6 @@
 // Right-side, full-height panel. Opened as a Steam modal so it gets its own gamepad focus tree
 // and native B / Esc handling; CSS turns the centered dialog into a side panel.
-import { Focusable, ModalRoot, showModal } from "@decky/ui";
+import { ModalRoot, showModal } from "@decky/ui";
 import { useEffect, useState } from "react";
 import { getState, setState, subscribe } from "./store";
 import { ClaudeTerminal } from "./terminal";
@@ -53,10 +53,12 @@ function PanelBody({ close }: { close: () => void }) {
         <span style={{ fontSize: 12, padding: "3px 9px", borderRadius: 10, background: s.running ? "#59bf4033" : "#e0484833" }}>
           {s.running ? "session running" : "no session"}
         </span>
-        <Focusable onActivate={close} onClick={close} onCancelButton={close}
+        {/* Touch only: B closes the panel, and keeping this out of the gamepad focus tree leaves the terminal
+            as the only focus target. */}
+        <div onClick={close}
           style={{ marginLeft: "auto", padding: "5px 12px", borderRadius: 5, background: "#ffffff14", cursor: "pointer" }}>
           B  Close
-        </Focusable>
+        </div>
       </div>
       <ClaudeTerminal />
     </div>
