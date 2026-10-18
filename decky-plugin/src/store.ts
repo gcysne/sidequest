@@ -12,5 +12,5 @@ export function subscribe(f: () => void) {
   subs.add(f);
   return () => { subs.delete(f); };
 }
-export const openPanel = () => setState({ panelOpen: true });
-export const closePanel = () => setState({ panelOpen: false });
+export let openPanel = () => {};
+export function setOpener(f: () => void) { openPanel = f; }

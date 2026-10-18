@@ -18,8 +18,8 @@ function ClaudeIcon() {
   return (
     <Focusable
       className="claude-deck-icon"
-      onActivate={openPanel}
-      onClick={openPanel}
+      onActivate={() => openPanel()}
+      onClick={() => openPanel()}
       style={{ display: "flex", alignItems: "center", height: "100%", padding: "0 8px",
                color: "#d97757", fontSize: "22px", fontWeight: 700, cursor: "pointer" }}
     >

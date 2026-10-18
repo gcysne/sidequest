@@ -1,9 +1,9 @@
 import { ButtonItem, Navigation, PanelSection, PanelSectionRow, staticClasses } from "@decky/ui";
-import { callable, definePlugin, routerHook } from "@decky/api";
+import { callable, definePlugin } from "@decky/api";
 import { useEffect, useState } from "react";
-import { ClaudePanel } from "./panel";
+import { closeClaudePanel, openClaudePanel } from "./panel";
 import { patchStatusBar, unpatchStatusBar } from "./statusbar";
-import { getState, openPanel, setState, subscribe } from "./store";
+import { getState, openPanel, setOpener, setState, subscribe } from "./store";
 
 const sessionStatus = callable<[], { running: boolean }>("session_status");
 const POLL_MS = 5000;
@@ -17,7 +17,7 @@ function QamContent({ iconOk }: { iconOk: boolean }) {
         <div>{s.running ? "Session running" : "No Claude session running"}</div>
       </PanelSectionRow>
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={() => { Navigation.CloseSideMenus(); openPanel(); }}>
+        <ButtonItem layout="below" onClick={() => { Navigation.CloseSideMenus(); setTimeout(() => openPanel(), 300); }}>
           Open Claude panel
         </ButtonItem>
       </PanelSectionRow>
@@ -34,7 +34,7 @@ export default definePlugin(() => {
   const poll = () => sessionStatus().then((r) => setState({ running: r.running })).catch(() => setState({ running: false }));
   poll();
   const timer = setInterval(poll, POLL_MS);
-  routerHook.addGlobalComponent("ClaudeDeckPanel", ClaudePanel);
+  setOpener(openClaudePanel);
   let iconOk = false;
   try { iconOk = patchStatusBar(); } catch (e) { console.error("[claude-deck] patch failed", e); }
 
@@ -45,7 +45,7 @@ export default definePlugin(() => {
     icon: <span style={{ fontWeight: 700 }}>{"✳"}</span>,
     onDismount() {
       clearInterval(timer);
-      routerHook.removeGlobalComponent("ClaudeDeckPanel");
+      closeClaudePanel();
       unpatchStatusBar();
     },
   };
