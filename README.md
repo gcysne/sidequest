@@ -44,8 +44,12 @@ git pull && ./install.sh                 # install or update
 
 - **Desktop Mode:** run `claude-session` in Konsole (not plain `claude`), so Desktop and Game Mode share one conversation.
 - **Game Mode:** launch "Claude Code" from the library. Steam+X opens the keyboard.
-  Push-to-talk: in `/voice` hold mode, hold Space. Map a back button to Space in the
-  shortcut's controller layout (a copy of the working layout is kept in `steam/controller/`).
+  Push-to-talk: in `/voice` hold mode, hold RT (sends Space).
+  Controller layout (`steam/controller/make_layout.py`, install with Steam closed via `install_layout.sh`):
+  A Enter, B Esc, X Shift+Tab, Y keyboard, D-pad arrows, left stick scroll, right pad mouse,
+  LT Esc Esc (rewind), LB/RB PgUp/PgDn, Menu `/`, View Tab, back buttons 1/2/3 and Ctrl+O.
+- Touchscreen: drag scrolls the session (`tmux/touch-scroll.conf`); taps still click.
+- Library art: `steam/artwork/make_artwork.sh <shortcut appid>` (official Claude mark from claude.ai).
 - Closing the "game" only detaches; Claude keeps working and will toast you when it needs you.
 
 Logs: `~/.local/state/claude-deck/{gamemode,notify}.log`.

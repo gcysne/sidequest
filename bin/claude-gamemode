@@ -14,7 +14,7 @@ unset LD_PRELOAD LD_LIBRARY_PATH
 
 # Look of the terminal; override in ~/.config/claude-deck/gamemode.conf
 FONT="Hack"
-FONT_SIZE=13
+FONT_SIZE=15
 BG="#232627"
 FG="#fcfcfc"
 [[ -f "$HOME/.config/claude-deck/gamemode.conf" ]] && . "$HOME/.config/claude-deck/gamemode.conf"

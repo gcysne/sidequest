@@ -21,6 +21,9 @@ for f in "$SRC"/bin/*; do
     ln -sfn "$LIB/bin/$(basename "$f")" "$BIN/$(basename "$f")"
 done
 say "scripts in $LIB/bin, linked in $BIN"
+mkdir -p "$LIB/tmux"
+cp "$SRC"/tmux/*.conf "$LIB/tmux/"
+say "tmux touch-scroll bindings in $LIB/tmux (loaded by claude-session)"
 
 # 2. Persistent session (user service; started on demand, not at boot)
 mkdir -p "$HOME/.config/systemd/user"
@@ -33,7 +36,7 @@ mkdir -p "$HOME/.config/claude-deck"
 [[ -f "$HOME/.config/claude-deck/gamemode.conf" ]] || cat > "$HOME/.config/claude-deck/gamemode.conf" <<'EOC'
 # Game Mode terminal (xterm) settings, read by claude-gamemode
 FONT="Hack"
-FONT_SIZE=13
+FONT_SIZE=15
 BG="#232627"
 FG="#fcfcfc"
 EOC

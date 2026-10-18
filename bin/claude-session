@@ -20,6 +20,10 @@ ensure() {
     # and let touch/trackpad scrolling go through tmux.
     "${T[@]}" set -g window-size latest
     "${T[@]}" set -g mouse on
+    # Touchscreen: drag scrolls instead of selecting.
+    local conf="$HOME/.local/lib/claude-deck/tmux/touch-scroll.conf"
+    [[ -f "$conf" ]] && "${T[@]}" source-file "$conf"
+    return 0
 }
 
 case "${1:-}" in
