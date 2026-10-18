@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Remove claude-deck's installed files. The Steam shortcut has to be removed
-# from Steam itself (library > Claude Code > Manage > Remove non-Steam game).
+# Remove claude-deck. Keeps your settings (~/.config/claude-deck), your project folder, Claude Code itself
+# and your Claude login. The Steam shortcut, if you added one, is removed in Steam
+# (library > Claude Code > Manage > Remove non-Steam game).
+#   ./uninstall.sh            remove scripts, service, hooks and the Decky plugin (asks for sudo)
+#   ./uninstall.sh --keep-plugin
 set -euo pipefail
 SRC="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HOME/.local/lib/claude-deck"
-PROJECT="${CLAUDE_DECK_PROJECT:-$HOME/deck-agent}"
+KEEP_PLUGIN=0; [[ "${1:-}" == "--keep-plugin" ]] && KEEP_PLUGIN=1
+# shellcheck source=lib/common.sh
+. "$SRC/lib/common.sh"
 
 systemctl --user stop claude-session.service 2>/dev/null || true
 rm -f "$HOME/.config/systemd/user/claude-session.service"
@@ -15,9 +20,10 @@ for f in "$SRC"/bin/*; do
 done
 rm -rf "$LIB"
 rm -f "$HOME/.local/share/applications/claude-code.desktop"
-echo "Kept ~/.config/claude-deck (your terminal settings)."
-if [[ -f "$PROJECT/.claude/settings.json" ]]; then
-    python3 -I - "$PROJECT/.claude/settings.json" <<'EOF'
+rm -rf "$CLAUDE_DECK_STATE/open-url" "$CLAUDE_DECK_STATE/toasts"
+
+if [[ -f "$PROJECT_DIR/.claude/settings.json" ]]; then
+    python3 -I - "$PROJECT_DIR/.claude/settings.json" <<'EOF'
 import json, sys
 from pathlib import Path
 p = Path(sys.argv[1]); cfg = json.loads(p.read_text())
@@ -32,5 +38,12 @@ for event in list(cfg.get("hooks", {})):
     else: del cfg["hooks"][event]
 p.write_text(json.dumps(cfg, indent=2) + "\n")
 EOF
+    echo "- removed claude-deck hooks from $PROJECT_DIR/.claude/settings.json"
 fi
-echo "Removed. Voices and Piper (~/.local/share/piper-voices, uv tool piper-tts) were left in place."
+
+if (( ! KEEP_PLUGIN )) && [[ -d "$HOME/homebrew/plugins/claude-deck" ]]; then
+    echo "- removing the Decky plugin needs your password (Decky owns ~/homebrew/plugins)"
+    sudo ${SUDO_ASKPASS:+-A} -p "[sudo] password to remove the claude-deck Decky plugin: " \
+        sh -c 'rm -rf "$1" && { systemctl restart plugin_loader 2>/dev/null || true; }' _ "$HOME/homebrew/plugins/claude-deck"
+fi
+echo "Removed. Kept: ~/.config/claude-deck, $PROJECT_DIR, Claude Code and your login."

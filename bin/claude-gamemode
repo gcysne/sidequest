@@ -9,6 +9,7 @@ exec >>"$LOG" 2>&1
 echo "--- $(date '+%F %T') start (DISPLAY=${DISPLAY:-} WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-})"
 
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+. "$HOME/.local/lib/claude-deck/lib/common.sh"
 # Steam may leave these set for games; they can break normal programs.
 unset LD_PRELOAD LD_LIBRARY_PATH
 
@@ -28,7 +29,7 @@ echo $$ >"$RUN/gamemode.pid"
 trap 'rm -f "$RUN/gamemode.pid"' EXIT
 
 # xterm: plain X11 window (runs natively under gamescope), no toolbars, truecolor.
-cd "$HOME/deck-agent"
+cd "$PROJECT_DIR" 2>/dev/null || cd "$HOME"
 xterm -fullscreen -title "Claude Code" -fa "$FONT" -fs "$FONT_SIZE" -bg "$BG" -fg "$FG" \
     -bc -bw 0 -b 12 \
     -xrm 'XTerm*utf8: 1' -xrm 'XTerm*termName: xterm-256color' -xrm 'XTerm*directColor: true' \

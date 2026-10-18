@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 # Runs inside the tmux session started by claude-session.service.
-cd "$HOME/deck-agent"
-if [[ "${CLAUDE_SESSION_NEW:-0}" == 1 ]]; then
-    claude --remote-control "Legion Go"
-else
-    claude --continue --remote-control "Legion Go" || claude --remote-control "Legion Go"
+. "$HOME/.local/lib/claude-deck/lib/common.sh"
+mkdir -p "$PROJECT_DIR" && cd "$PROJECT_DIR" || exit 1
+# Login and other links: open in Steam's browser in Game Mode, the desktop browser otherwise.
+export BROWSER="$HOME/.local/bin/claude-open-url"
+
+if ! command -v claude >/dev/null; then
+    echo "Claude Code is not installed. Run claude-deck's install.sh in Desktop Mode."
+    echo "Press Enter to close."; read -r _; exit 1
 fi
-echo; echo "Claude exited. Press Enter to close this tmux session."; read -r _
+args=()
+[[ -n "$REMOTE_CONTROL_NAME" ]] && args=(--remote-control "$REMOTE_CONTROL_NAME")
+if [[ "${CLAUDE_SESSION_NEW:-0}" == 1 ]]; then
+    claude "${args[@]}"
+else
+    claude --continue "${args[@]}" || claude "${args[@]}"
+fi
+echo; echo "Claude exited. Press Enter to close this session (it can be started again from the Quick Access menu)."
+read -r _

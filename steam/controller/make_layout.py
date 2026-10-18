@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build the Steam Input layout for the "Claude Code" shortcut (Legion Go).
 
-    python3 make_layout.py > controller_legion_go.vdf
+    python3 make_layout.py [STEAM_ACCOUNT_ID] > controller_legion_go.vdf
+STEAM_ACCOUNT_ID is the numeric folder name under ~/.local/share/Steam/userdata (install_layout.sh passes it).
 
 Install with ./install_layout.sh (Steam must be closed, or it overwrites the file).
 
@@ -94,10 +95,16 @@ def emit(obj, ind):
             out.append(f"{ind}{q(k)}\t\t{q(str(v))}")
     return out
 
+import sys
+account = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+creator = str(76561197960265728 + account) if account else "0"   # SteamID64 of the account
+import os
+url = ("autosave://" + os.path.expanduser("~") + "/.local/share/Steam/steamapps/common/Steam Controller Configs/"
+       f"{account}/config/claude code/controller_legion_go.vdf")
 root = [("version", "3"), ("revision", "4"), ("title", "Claude Code terminal"),
         ("description", "Terminal layout for Claude Code (claude-deck)"),
-        ("creator", "76561197981121189"), ("progenitor", "default://claude code"),
-        ("url", "autosave:///home/deck/.local/share/Steam/steamapps/common/Steam Controller Configs/20855461/config/claude code/controller_legion_go.vdf"),
+        ("creator", creator), ("progenitor", "default://claude code"),
+        ("url", url),
         ("export_type", "unknown"), ("controller_type", "controller_legion_go"),
         ("controller_caps", "23117823"), ("major_revision", "0"), ("minor_revision", "0"),
         ("timestamp", "0")]

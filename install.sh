@@ -1,83 +1,171 @@
 #!/usr/bin/env bash
-# Install or update claude-deck. Home folder only, no sudo, safe to re-run.
-#   ./install.sh                 install/update files, hooks, systemd unit
-#   ./install.sh --add-to-steam  also add the "Claude Code" shortcut to Steam (once)
+# Install or update claude-deck. Safe to re-run. Run it in Desktop Mode, from a terminal (Konsole).
+#
+#   ./install.sh                  install/update everything
+#   ./install.sh --add-to-steam   also add a "Claude Code" shortcut to the Steam library (once)
+#   ./install.sh --no-plugin      skip the Decky plugin (Game Mode panel)
+#   ./install.sh --no-claude      don't install Claude Code even if it's missing
+#
+# Everything goes into your home folder. Only copying the Decky plugin into ~/homebrew/plugins needs sudo,
+# because Decky Loader owns that folder.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HOME/.local/lib/claude-deck"
 BIN="$HOME/.local/bin"
-PROJECT="${CLAUDE_DECK_PROJECT:-$HOME/deck-agent}"   # where Claude Code runs
-ADD_TO_STEAM=0
-[[ "${1:-}" == "--add-to-steam" ]] && ADD_TO_STEAM=1
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude-deck"
+CONF="$CONF_DIR/config"
+ADD_TO_STEAM=0 PLUGIN=1 CLAUDE=1
+for a in "$@"; do
+    case "$a" in
+        --add-to-steam) ADD_TO_STEAM=1 ;;
+        --no-plugin)    PLUGIN=0 ;;
+        --no-claude)    CLAUDE=0 ;;
+        -h|--help)      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *)              echo "unknown option: $a (see --help)" >&2; exit 2 ;;
+    esac
+done
 
-say() { printf '%s\n' "- $*"; }
+say()  { printf '\033[1m- %s\033[0m\n' "$*"; }
+warn() { printf '\033[33m! %s\033[0m\n' "$*" >&2; }
+die()  { printf '\033[31mx %s\033[0m\n' "$*" >&2; exit 1; }
 
-# 1. Scripts: copy to ~/.local/lib/claude-deck, link into ~/.local/bin
-mkdir -p "$LIB/bin" "$BIN"
+# 0. Requirements that ship with SteamOS (and most desktop Linux distributions)
+for c in tmux python3 curl systemctl; do
+    command -v "$c" >/dev/null || die "$c is required but not installed."
+done
+systemctl --user show-environment >/dev/null 2>&1 || die "No systemd user session found (systemctl --user)."
+command -v xterm >/dev/null || warn "xterm not found: the optional Steam library shortcut won't work (the Decky panel will)."
+
+# 1. Settings (created once; yours to edit)
+mkdir -p "$CONF_DIR"
+if [[ ! -f "$CONF" ]]; then
+    cat > "$CONF" <<EOF
+# claude-deck settings (shell syntax). After changing them: claude-session --stop, then start it again.
+
+# Folder the persistent Claude Code session works in (its project). Created if missing.
+PROJECT_DIR="${CLAUDE_DECK_PROJECT:-\$HOME/Claude}"
+
+# Name for Claude Code Remote Control (continue the session from claude.ai or the Claude app).
+# Empty = Remote Control off.
+REMOTE_CONTROL_NAME=""
+EOF
+    say "settings: $CONF (project folder, Remote Control)"
+else
+    say "settings: keeping $CONF"
+fi
+# shellcheck source=lib/common.sh
+. "$SRC/lib/common.sh"
+mkdir -p "$PROJECT_DIR"
+
+# 2. Claude Code (official native installer from claude.ai, installs into ~/.local)
+if command -v claude >/dev/null || [[ -x "$BIN/claude" ]]; then
+    say "Claude Code: $("$BIN/claude" --version 2>/dev/null || claude --version 2>/dev/null || echo installed)"
+elif (( CLAUDE )); then
+    say "Claude Code not found; installing it with the official installer (https://claude.ai/install.sh)"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    curl -fsSL https://claude.ai/install.sh -o "$tmp/install.sh"
+    echo "  installer sha256: $(sha256sum "$tmp/install.sh" | cut -d' ' -f1)"
+    bash "$tmp/install.sh"
+    [[ -x "$BIN/claude" ]] || command -v claude >/dev/null || die "Claude Code install failed; see https://docs.claude.com/en/docs/claude-code/setup"
+else
+    warn "Claude Code is not installed (--no-claude). The session won't start until it is."
+fi
+
+# 3. Scripts: copy to ~/.local/lib/claude-deck, link into ~/.local/bin
+mkdir -p "$LIB/bin" "$LIB/lib" "$LIB/tmux" "$BIN"
 cp "$SRC"/bin/* "$LIB/bin/"
+cp "$SRC"/lib/*.sh "$LIB/lib/"
+cp "$SRC"/tmux/*.conf "$LIB/tmux/"
 chmod +x "$LIB"/bin/*
 for f in "$SRC"/bin/*; do
-    ln -sfn "$LIB/bin/$(basename "$f")" "$BIN/$(basename "$f")"
+    n="$(basename "$f")"
+    [[ "$n" == claude-session-inner ]] && continue   # only run by the service
+    ln -sfn "$LIB/bin/$n" "$BIN/$n"
 done
-say "scripts in $LIB/bin, linked in $BIN"
-mkdir -p "$LIB/tmux"
-cp "$SRC"/tmux/*.conf "$LIB/tmux/"
-say "tmux touch-scroll bindings in $LIB/tmux (loaded by claude-session)"
+rm -f "$BIN/claude-session-inner"
+say "scripts in $LIB, commands linked in $BIN"
+case ":$PATH:" in *":$BIN:"*) ;; *) warn "$BIN is not in your PATH; add it to use claude-session from a terminal." ;; esac
 
-# 2. Persistent session (user service; started on demand, not at boot)
+# 4. Persistent session: user service, kept alive across Desktop/Game Mode switches (linger)
 mkdir -p "$HOME/.config/systemd/user"
 cp "$SRC/systemd/claude-session.service" "$HOME/.config/systemd/user/"
 systemctl --user daemon-reload
-say "claude-session.service installed (restart it to pick up changes: claude-session --stop)"
+if [[ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" != yes ]]; then
+    if loginctl enable-linger "$USER" 2>/dev/null; then
+        say "enabled linger: your user services keep running when you switch modes"
+    else
+        warn "could not enable linger; the session may stop when you switch between Desktop and Game Mode"
+    fi
+fi
+say "claude-session.service installed (if it was running: claude-session --stop to pick up changes)"
 
-# 3. Terminal look for Game Mode (only created once; edit it freely)
-mkdir -p "$HOME/.config/claude-deck"
-[[ -f "$HOME/.config/claude-deck/gamemode.conf" ]] || cat > "$HOME/.config/claude-deck/gamemode.conf" <<'EOC'
-# Game Mode terminal (xterm) settings, read by claude-gamemode
+# 5. Game Mode terminal look for the optional Steam shortcut (created once)
+[[ -f "$CONF_DIR/gamemode.conf" ]] || cat > "$CONF_DIR/gamemode.conf" <<'EOF'
+# Look of the "Claude Code" Steam library shortcut's terminal (xterm), read by claude-gamemode
 FONT="Hack"
 FONT_SIZE=25
 BG="#232627"
 FG="#fcfcfc"
-EOC
-say "terminal settings ~/.config/claude-deck/gamemode.conf"
+EOF
 
-# 4. App entry (also what Steam's shortcut is created from)
+# 6. App entry (also what the Steam shortcut is created from)
 mkdir -p "$HOME/.local/share/applications"
 sed "s|@HOME@|$HOME|g" "$SRC/steam/claude-code.desktop" > "$HOME/.local/share/applications/claude-code.desktop"
-say "app entry ~/.local/share/applications/claude-code.desktop"
 
-# 5. Claude Code hooks (voice + notifications) in the project's settings
-mkdir -p "$PROJECT/.claude"
-python3 -I - "$SRC/claude-hooks/hooks.json" "$PROJECT/.claude/settings.json" "$HOME" <<'EOF'
+# 7. Claude Code hooks for the project: notifications, plus voice when Piper is installed
+mkdir -p "$PROJECT_DIR/.claude"
+VOICE=0; [[ -x "$BIN/piper" ]] && VOICE=1
+python3 -I - "$SRC/claude-hooks/hooks.json" "$PROJECT_DIR/.claude/settings.json" "$HOME" "$VOICE" <<'EOF'
 import json, sys
 from pathlib import Path
-src, dst, home = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+src, dst, home, voice = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3], sys.argv[4] == "1"
 ours = json.loads(src.read_text().replace("@HOME@", home))
+mine = ("/.local/bin/claude-tts", "/.local/bin/claude-notify")
+if not voice:
+    for groups in ours.values():
+        for g in groups:
+            g["hooks"] = [h for h in g["hooks"] if not h["command"].endswith("/claude-tts")]
 try:
     cfg = json.loads(dst.read_text())
 except FileNotFoundError:
     cfg = {}
 hooks = cfg.setdefault("hooks", {})
-mine = ("/.local/bin/claude-tts", "/.local/bin/claude-notify")
 for event, groups in ours.items():
     kept = []
-    for g in hooks.get(event, []):          # drop earlier claude-deck entries, keep the rest
+    for g in hooks.get(event, []):          # drop earlier claude-deck entries, keep everything else
         g["hooks"] = [h for h in g.get("hooks", []) if not str(h.get("command", "")).endswith(mine)]
         if g["hooks"]:
             kept.append(g)
-    hooks[event] = kept + groups
+    hooks[event] = kept + [g for g in groups if g["hooks"]]
 dst.write_text(json.dumps(cfg, indent=2) + "\n")
 EOF
-say "hooks merged into $PROJECT/.claude/settings.json (Stop: voice + notify, Notification: notify)"
+say "hooks in $PROJECT_DIR/.claude/settings.json (notifications$( ((VOICE)) && echo ', voice'))"
 
-# 6. Steam shortcut (only when asked; Steam must be running)
+# 8. Decky plugin: the Game Mode panel
+if (( PLUGIN )); then
+    if [[ -d "$HOME/homebrew/plugins" ]]; then
+        "$SRC/decky-plugin/install.sh"
+    else
+        warn "Decky Loader not found, so the Game Mode panel was skipped. Install Decky from https://decky.xyz"
+        warn "(Desktop Mode), then run ./install.sh again."
+    fi
+fi
+
+# 9. Steam library shortcut (optional; Steam must be running)
 if (( ADD_TO_STEAM )); then
     if grep -qs "claude-gamemode" "$HOME"/.local/share/Steam/userdata/*/config/shortcuts.vdf; then
         say "Steam already has a Claude Code shortcut; skipped"
-    else
+    elif command -v steamos-add-to-steam >/dev/null; then
         steamos-add-to-steam "$HOME/.local/share/applications/claude-code.desktop"
         say "asked Steam to add the Claude Code shortcut"
+    else
+        warn "steamos-add-to-steam not found; add ~/.local/bin/claude-gamemode to Steam as a non-Steam game."
     fi
 fi
-echo "Done."
+
+echo
+say "Done. Next:"
+echo "  * First run (login): see docs/first-run.md. In Game Mode: Quick Access menu (…) > Claude Deck > Start."
+echo "  * Desktop Mode: run 'claude-session' in a terminal to join the same session."

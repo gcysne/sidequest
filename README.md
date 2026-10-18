@@ -1,55 +1,134 @@
 # claude-deck
 
-Claude Code as a first-class citizen on a SteamOS handheld (Lenovo Legion Go):
-one persistent Claude session that you can reach from Desktop Mode, from Game Mode
-(as a "game" in the Steam library) and from your phone (Remote Control), with
-answers read aloud and notifications when Claude needs you.
+**Claude Code on SteamOS handhelds, in Game Mode.** One persistent Claude Code session that you open as a side
+panel from the Steam status bar, drive with the controller and the touchscreen, and also reach from Desktop Mode
+and your phone.
 
-Status: stage 1 (Steam shortcut + notifications). Stage 2, a Decky plugin with a
-chat panel in the Quick Access Menu, will live in `decky-plugin/`.
+> **Alpha.** Built and tested on a Lenovo Legion Go with SteamOS 3.8. It should work on other SteamOS devices
+> (Steam Deck, Legion Go S, ROG Ally on SteamOS) but hasn't been tested there yet. Reports welcome.
+>
+> claude-deck is a community project. It is **not affiliated with or endorsed by Anthropic** or Valve.
+> "Claude" and "Claude Code" are trademarks of Anthropic.
 
-## What it installs (home folder only, no sudo)
+## What you get
 
-| Piece | Where | What it does |
-|---|---|---|
-| `claude-session` | `~/.local/bin` | Start/attach the persistent session (tmux `-L claude`, user service) |
-| `claude-session-inner` | `~/.local/lib/claude-deck/bin` | Runs `claude --continue --remote-control "Legion Go"` in the project folder |
-| `claude-gamemode` | `~/.local/bin` | Steam shortcut target: full-screen xterm joined to the session |
-| `claude-notify` | `~/.local/bin` | Hook: KDE notification (Desktop) or Steam toast (Game Mode) |
-| `claude-tts` | `~/.local/bin` | Hook: reads answers aloud with Piper |
-| `claude-session.service` | `~/.config/systemd/user` | Keeps the tmux session alive across mode switches (needs `loginctl enable-linger`) |
-| `gamemode.conf` | `~/.config/claude-deck` | Font, size and colors of the Game Mode terminal (created once, yours to edit) |
-| `claude-code.desktop` | `~/.local/share/applications` | App entry; the Steam shortcut is created from it |
-| hooks | `<project>/.claude/settings.json` | Stop → voice + notify, Notification → notify (merged, other hooks kept) |
-
-The project folder is `~/deck-agent` (override with `CLAUDE_DECK_PROJECT=...`).
+- **Game Mode panel**: a ✳ icon in Steam's status bar opens your Claude session as a right-side panel (a Decky
+  Loader plugin). B closes it; Claude keeps working.
+- **Controller-first input**: Y opens Steam's keyboard straight into Claude's prompt, the D-pad navigates Claude's
+  menus, touch-drag scrolls. Full mapping below.
+- **Start / new conversation / stop** from the Quick Access menu (… button > Claude Deck).
+- **Login from Game Mode**: Claude's sign-in page opens in Steam's built-in browser; no Desktop Mode needed.
+- **One session everywhere**: the same conversation in Game Mode, in a Desktop Mode terminal (`claude-session`),
+  and, optionally, on your phone or claude.ai via Claude Code Remote Control.
+- **Notifications**: a Steam toast when Claude needs your permission or input (desktop notification in Desktop Mode).
+- **Optional**: answers read aloud with [Piper](https://github.com/rhasspy/piper); a "Claude Code" Steam library
+  shortcut with its own controller layout.
 
 ## Requirements
 
-- Claude Code (`claude`) in `~/.local/bin`, tmux, xterm (all present on SteamOS 3.8 + Claude Code installer).
-  xterm is used in Game Mode because Konsole always keeps a toolbar there and xterm is a plain X11 app, which gamescope runs natively.
-- Voice: `piper-tts` (`uv tool install piper-tts`) and voices in `~/.local/share/piper-voices`.
-- Game Mode toasts: the [legion-go-guards](https://github.com/gcysne/legion-go-guards) Decky plugin
-  (its toast spool `~/.local/state/legion-go-guards/toasts/`). Without it, Game Mode notifications are skipped.
+- SteamOS 3.7+ (or another Linux with Steam's Game Mode / gamescope session and systemd).
+- [Decky Loader](https://decky.xyz) for the Game Mode panel.
+- A Claude subscription (Pro, Max, Team, Enterprise) or an Anthropic Console account. Claude Code's
+  [usage terms](https://www.anthropic.com/legal) apply.
+- Installed for you if missing: [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) (official
+  installer) and, only to build the plugin, Node.js (official build from nodejs.org, checksum-verified, kept in
+  `~/.cache/claude-deck/node`). `tmux`, `xterm`, `python3` and `curl` ship with SteamOS.
 
-## Install / update / remove
+## Install
+
+In **Desktop Mode**, open Konsole:
 
 ```bash
-git pull && ./install.sh                 # install or update
-./install.sh --add-to-steam              # first time: also add "Claude Code" to the Steam library
-./uninstall.sh                           # remove (Steam shortcut: remove it in Steam)
+git clone https://github.com/gcysne/claude-deck.git
+cd claude-deck
+./install.sh
 ```
+
+The installer explains each step. It asks for your password once, to copy the plugin into Decky's folder
+(`~/homebrew/plugins` belongs to root). Everything else stays in your home folder. Re-run it to update
+(`git pull && ./install.sh`).
+
+Then switch to Game Mode and follow **[First run](docs/first-run.md)**: start Claude from the Quick Access menu,
+pick a theme, and sign in. It takes about two minutes.
+
+Options: `--add-to-steam` (library shortcut), `--no-plugin`, `--no-claude`. Remove with `./uninstall.sh`.
 
 ## Using it
 
-- **Desktop Mode:** run `claude-session` in Konsole (not plain `claude`), so Desktop and Game Mode share one conversation.
-- **Game Mode:** launch "Claude Code" from the library. Steam+X opens the keyboard.
-  Push-to-talk: in `/voice` hold mode, hold RT (sends Space).
-  Controller layout (`steam/controller/make_layout.py`, install with Steam closed via `install_layout.sh`):
-  A Enter, B Esc, X Shift+Tab, Y keyboard, D-pad arrows, left stick scroll, right pad mouse,
-  LT Esc Esc (rewind), LB/RB PgUp/PgDn, Menu `/`, View Tab, back buttons 1/2/3 and Ctrl+O.
-- Touchscreen: drag scrolls the session (`tmux/touch-scroll.conf`); taps still click.
-- Library art: `steam/artwork/make_artwork.sh <shortcut appid>` (official Claude mark from claude.ai).
-- Closing the "game" only detaches; Claude keeps working and will toast you when it needs you.
+**Game Mode panel** (✳ in the status bar, or Quick Access menu > Claude Deck > Open):
 
-Logs: `~/.local/state/claude-deck/{gamemode,notify}.log`.
+| Button | Action |
+|---|---|
+| A | Enter |
+| B | close the panel (Claude keeps running) |
+| X | Shift+Tab (switch Claude's mode) |
+| Y | on-screen keyboard, typing into Claude's prompt |
+| D-pad / left stick | arrow keys |
+| LT | Esc (twice: rewind) |
+| RT (hold) | Space, held (push-to-talk in `/voice` hold mode) |
+| LB / RB | Page Up / Page Down |
+| Menu ≡ | `/` (slash commands) |
+| View | Tab |
+| Touchscreen | drag to scroll, tap to click |
+
+**Desktop Mode**: run `claude-session` in a terminal to join the same session (not plain `claude`, which would
+start a separate one). `claude-session --help` lists the other commands.
+
+**Settings**: `~/.config/claude-deck/config`. It holds the project folder Claude works in (default `~/Claude`) and
+the Remote Control name (off by default). Restart the session after changing them (Quick Access menu > Stop
+session, then Start).
+
+## How it works
+
+```
+ Game Mode (Steam UI)                         your home folder
+ ┌────────────────────────────┐   pty bridge  ┌──────────────────────────────────────────┐
+ │ Decky plugin "Claude Deck" │◄────────────► │ tmux -L claude  (claude-session.service)  │
+ │  status-bar icon, panel,   │               │   └─ claude (Claude Code) in PROJECT_DIR │
+ │  xterm.js terminal         │◄── spool ──── │ claude-open-url / claude-notify (hooks)  │
+ └────────────────────────────┘               └──────────────────────────────────────────┘
+        Desktop Mode terminal ── claude-session ──► same tmux session
+```
+
+- The session runs in tmux under a systemd **user** service with linger, so it survives switching between Desktop
+  and Game Mode.
+- The panel attaches a new tmux client inside a pseudo-terminal in the plugin's Python backend and streams it to
+  xterm.js. Closing the panel only detaches.
+- Claude's browser requests (`BROWSER=claude-open-url`) and notification hooks drop small files in
+  `~/.local/state/claude-deck/`. The plugin turns them into Steam's browser and Steam toasts.
+
+| Installed piece | Where |
+|---|---|
+| Scripts (`claude-session`, `claude-open-url`, `claude-notify`, `claude-tts`, `claude-gamemode`) | `~/.local/lib/claude-deck`, linked in `~/.local/bin` |
+| Session service | `~/.config/systemd/user/claude-session.service` |
+| Settings | `~/.config/claude-deck/` |
+| Claude Code hooks (notifications, voice) | `<project folder>/.claude/settings.json` (merged; your hooks are kept) |
+| Decky plugin | `~/homebrew/plugins/claude-deck` |
+| Logs | `~/.local/state/claude-deck/*.log`, Decky: `journalctl -u plugin_loader` |
+
+## Optional extras
+
+- **Voice**: install Piper (`uv tool install piper-tts`) and a voice in `~/.local/share/piper-voices`, then re-run
+  `./install.sh`. `claude-tts --help` for voices and on/off.
+- **Steam library shortcut** (`./install.sh --add-to-steam`): a full-screen terminal "game" for the same session.
+  Art: `steam/artwork/make_artwork.sh <appid>`. A Legion Go controller layout for it:
+  `steam/controller/install_layout.sh` (Steam must be closed).
+
+## Known limitations (alpha)
+
+- Device back buttons (e.g. Legion Go Y1–Y3/M3) don't reach Steam's UI, so the panel can't use them.
+- The left stick can't be told apart from the D-pad in Steam's UI; both send arrows.
+- Touch scrolling moves in steps (one wheel event per text row).
+- Google sign-in may refuse Steam's built-in browser; use email sign-in, or sign in once in Desktop Mode.
+- The status-bar icon hooks into Steam's UI internals; a Steam client update can break it. The Quick Access menu
+  entry keeps working when that happens.
+- Running a game while the panel is open isn't handled yet.
+
+## Development
+
+`decky-plugin/` is a standard Decky plugin (TypeScript + rollup, Python backend). `corepack pnpm install`,
+`corepack pnpm run build`, then `decky-plugin/install.sh`. Design notes: `docs/spikes/`, `docs/panel-backlog.md`.
+
+## License
+
+See [LICENSE](LICENSE).

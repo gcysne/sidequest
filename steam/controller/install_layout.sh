@@ -7,8 +7,10 @@ cd "$(dirname "$0")"
 if pgrep -x steam >/dev/null; then
     echo "Steam is running. Close it first (steam -shutdown), then re-run." >&2; exit 1
 fi
-python3 -I make_layout.py > controller_legion_go.vdf
+# Legion Go only for now (Steam controller type "controller_legion_go"). The Decky panel needs no layout.
 for d in "$HOME"/.local/share/Steam/steamapps/common/"Steam Controller Configs"/*/config; do
+    account="$(basename "$(dirname "$d")")"
+    python3 -I make_layout.py "$account" > controller_legion_go.vdf
     dst="$d/claude code/controller_legion_go.vdf"
     mkdir -p "$(dirname "$dst")"
     if [[ -f "$dst" ]]; then

@@ -4,3 +4,4 @@ node_modules/
 decky-plugin/dist/
 decky-plugin/build/
 steam/artwork/out/
+steam/controller/controller_legion_go.vdf

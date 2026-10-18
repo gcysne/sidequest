@@ -1,6 +1,9 @@
 # Game Mode panel: UX backlog
 
-Feedback from the owner's Game Mode test on 2026-10-18 (Legion Go). Nothing here is implemented yet.
+Feedback from the owner's Game Mode test on 2026-10-18 (Legion Go).
+
+**Status:** items 1–3 solved in commit 7591207 by typing straight into the terminal (see the spike at the end)
+and touch-drag scrolling. Touch scrolling still moves in row steps; smoother scrolling is open.
 
 ## 1. D-pad moves focus between the text box and the terminal
 

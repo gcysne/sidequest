@@ -6,17 +6,18 @@ Reads the hook JSON on stdin (Notification or Stop event).
   Stop (answer finished) -> shown only in Game Mode when the Claude terminal
                             is not on screen (otherwise the voice reads it)
 
-Desktop Mode: KDE notification (notify-send).
-Game Mode:    Steam toast, through the legion-go-guards Decky plugin spool
-              (~/.local/state/legion-go-guards/toasts/*.json). When the claude-deck
-              Decky plugin exists, it will read the same kind of spool.
+Desktop Mode: desktop notification (notify-send).
+Game Mode:    Steam toast, through the claude-deck Decky plugin's spool
+              (~/.local/state/claude-deck/toasts/*.json). The legion-go-guards plugin's
+              spool is used as a fallback when only that plugin is running.
 """
 import json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
-TOASTS = STATE / "legion-go-guards/toasts"
-DECKY_ALIVE = STATE / "legion-go-guards/decky-alive"
+# (toast spool, heartbeat file touched by the plugin while it runs), in order of preference
+SPOOLS = [(STATE / "claude-deck/toasts", STATE / "claude-deck/decky-alive"),
+          (STATE / "legion-go-guards/toasts", STATE / "legion-go-guards/decky-alive")]
 RUN = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "claude-deck"
 LOG = STATE / "claude-deck/notify.log"
 
@@ -34,11 +35,14 @@ def terminal_on_screen():
         return False
 
 
-def decky_alive():
-    try:
-        return time.time() - DECKY_ALIVE.stat().st_mtime < 20
-    except OSError:
-        return False
+def live_spool():
+    for spool, alive in SPOOLS:
+        try:
+            if time.time() - alive.stat().st_mtime < 20:
+                return spool
+        except OSError:
+            pass
+    return None
 
 
 def first_sentence(text, limit=140):
@@ -57,9 +61,10 @@ def show(title, body, urgent):
                             "--urgency", "critical" if urgent else "normal", title, body],
                            capture_output=True, timeout=10)
         return "desktop"
-    if decky_alive():
-        TOASTS.mkdir(parents=True, exist_ok=True)
-        path = TOASTS / f"{time.time_ns()}-{os.getpid()}.json"
+    spool = live_spool()
+    if spool:
+        spool.mkdir(parents=True, exist_ok=True)
+        path = spool / f"{time.time_ns()}-{os.getpid()}.json"
         tmp = path.with_suffix(".tmp")
         tmp.write_text(json.dumps({"title": title, "body": body, "critical": urgent}))
         tmp.replace(path)  # the plugin only reads *.json
