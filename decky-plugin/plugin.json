@@ -1,0 +1,11 @@
+{
+  "name": "Claude Deck",
+  "author": "gcysne",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["utility", "ai"],
+    "description": "Open your Claude Code session as a side panel in Game Mode.",
+    "image": ""
+  }
+}
