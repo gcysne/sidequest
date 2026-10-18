@@ -11,10 +11,38 @@ const termInput = callable<[string], void>("term_input");
 const termResize = callable<[number, number], void>("term_resize");
 const termClose = callable<[], void>("term_close");
 
-const KEYS: Record<number, string> = {
+// Same layout as the Steam Input layout of the "Claude Code" shortcut (steam/controller/make_layout.py),
+// except B, which closes the panel here; Esc moves to LT (press LT twice for Claude Code's rewind).
+const ESC = "\x1b";
+const ARROWS: Record<number, string> = {
   [GamepadButton.DIR_UP]: "\x1b[A", [GamepadButton.DIR_DOWN]: "\x1b[B",
   [GamepadButton.DIR_RIGHT]: "\x1b[C", [GamepadButton.DIR_LEFT]: "\x1b[D",
 };
+const BUTTON_KEYS: Record<number, string> = {
+  [GamepadButton.SECONDARY]: "\x1b[Z",        // X: Shift+Tab (mode)
+  [GamepadButton.TRIGGER_LEFT]: ESC,           // LT: Esc
+  [GamepadButton.BUMPER_LEFT]: "\x1b[5~",      // LB: Page Up
+  [GamepadButton.BUMPER_RIGHT]: "\x1b[6~",     // RB: Page Down
+  [GamepadButton.START]: "/",                  // Menu (≡): slash commands
+  [GamepadButton.SELECT]: "\t",                // View: Tab
+  [GamepadButton.REAR_LEFT_LOWER]: "1",        // back buttons: permission prompt answers
+  [GamepadButton.REAR_LEFT_UPPER]: "2",
+  [GamepadButton.REAR_RIGHT_LOWER]: "3",
+  [GamepadButton.REAR_RIGHT_UPPER]: "\x0f",    // Ctrl+O: transcript
+};
+// Back buttons: on the Legion Go (SteamOS 3.8, InputPlumber) Steam does not pass them to its own UI, so they
+// only work on devices where they arrive as REAR_* buttons. The left stick cannot be told apart from the D-pad
+// (same button and source in Steam's events), so both send arrows; scroll with LB/RB or a touch drag.
+const REPEATS = new Set<number>([GamepadButton.BUMPER_LEFT, GamepadButton.BUMPER_RIGHT]);
+const SPACE_REPEAT_MS = 40; // RT held = Space auto-repeat, like holding the key (Claude Code /voice push-to-talk)
+
+// Last gamepad events, for debugging mappings over CDP: window.__claudeDeckPad
+function trace(kind: string, evt: any) {
+  const w = window as any;
+  const log = (w.__claudeDeckPad ??= []);
+  log.push({ kind, button: evt?.detail?.button, source: evt?.detail?.source, repeat: evt?.detail?.is_repeat, t: Date.now() });
+  if (log.length > 60) log.shift();
+}
 
 function injectCss(doc: Document) {
   if (doc.getElementById("claude-deck-xterm-css")) return;
@@ -36,6 +64,59 @@ export function ClaudeTerminal() {
   const termRef = useRef<Terminal | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
+  const inputBox = useRef<HTMLDivElement>(null);
+  const spaceTimer = useRef<number | null>(null);
+
+  const stopSpace = () => {
+    if (spaceTimer.current !== null) { clearInterval(spaceTimer.current); spaceTimer.current = null; }
+  };
+  useEffect(() => stopSpace, []);
+
+  const openKeyboard = () => {
+    const input = inputBox.current?.querySelector("input") as HTMLInputElement | null;
+    if (!input) return;
+    input.focus();
+    const vk = (window as any).SteamUIStore?.WindowStore?.GamepadUIMainWindowInstance?.VirtualKeyboardManager;
+    try { vk?.SetVirtualKeyboardVisible?.(); } catch { /* the focused field still opens it on A */ }
+  };
+
+  const onButtonDown = (evt: any) => {
+    trace("down", evt);
+    const b = evt?.detail?.button;
+    const repeat = !!evt?.detail?.is_repeat;
+    if (b === GamepadButton.TRIGGER_RIGHT) {
+      if (spaceTimer.current === null) {
+        termInput(" ");
+        const started = Date.now();
+        spaceTimer.current = window.setInterval(() => {
+          if (Date.now() - started > 60_000) { stopSpace(); return; } // lost button-up: never repeat forever
+          termInput(" ");
+        }, SPACE_REPEAT_MS);
+      }
+    } else if (b === GamepadButton.OPTIONS) {
+      if (!repeat) openKeyboard();
+    } else if (b in BUTTON_KEYS) {
+      if (repeat && !REPEATS.has(b)) return;
+      termInput(BUTTON_KEYS[b]);
+    } else {
+      return; // A, B, directions: handled by their own props / Steam
+    }
+    evt.preventDefault?.(); evt.stopPropagation?.();
+  };
+
+  const onButtonUp = (evt: any) => {
+    trace("up", evt);
+    if (evt?.detail?.button === GamepadButton.TRIGGER_RIGHT) stopSpace();
+  };
+
+  const onDirection = (evt: any) => {
+    trace("dir", evt);
+    const b = evt?.detail?.button;
+    const key = ARROWS[b];
+    if (!key) return;
+    termInput(key);
+    evt.preventDefault?.(); evt.stopPropagation?.();
+  };
 
   useEffect(() => {
     const el = host.current;
@@ -85,18 +166,17 @@ export function ClaudeTerminal() {
     setText("");
   };
 
+  // Button mapping sits on the outer Focusable so it also works while the text box or Send has focus.
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <Focusable onButtonDown={onButtonDown} onButtonUp={onButtonUp}
+      style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Focusable
         noFocusRing={false}
         onActivate={() => termInput("\r")}
-        onSecondaryButton={() => termInput("\x1b")}
-        onGamepadDirection={(evt: any) => {
-          const key = KEYS[evt?.detail?.button];
-          if (key) { termInput(key); evt.preventDefault?.(); evt.stopPropagation?.(); }
-        }}
+        onGamepadDirection={onDirection}
         onOKActionDescription="Enter"
-        onSecondaryActionDescription="Esc"
+        onSecondaryActionDescription="Shift+Tab"
+        onOptionsActionDescription="Keyboard"
         style={{ flex: 1, minHeight: 0, margin: "10px 12px 0", borderRadius: 6, background: "#101215",
                  padding: "8px 10px", border: "1px solid #ffffff14", position: "relative" }}
       >
@@ -107,7 +187,7 @@ export function ClaudeTerminal() {
         )}
       </Focusable>
       <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px" }}>
-        <div style={{ flex: 1 }}
+        <div ref={inputBox} style={{ flex: 1 }}
              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }}>
           <TextField value={text} onChange={(e) => setText(e.target.value)} />
         </div>
@@ -117,6 +197,6 @@ export function ClaudeTerminal() {
           Send
         </Focusable>
       </div>
-    </div>
+    </Focusable>
   );
 }
