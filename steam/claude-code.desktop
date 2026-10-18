@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Claude Code
-Comment=Your persistent Claude Code session (claude-deck)
-Exec=@HOME@/.local/bin/claude-gamemode
-Icon=utilities-terminal
-Terminal=false
-Categories=Utility;

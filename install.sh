@@ -2,7 +2,6 @@
 # Install or update claude-deck. Safe to re-run. Run it in Desktop Mode, from a terminal (Konsole).
 #
 #   ./install.sh                  install/update everything
-#   ./install.sh --add-to-steam   also add a "Claude Code" shortcut to the Steam library (once)
 #   ./install.sh --no-plugin      skip the Decky plugin (Game Mode panel)
 #   ./install.sh --no-claude      don't install Claude Code even if it's missing
 #   ./install.sh --voice          install text-to-speech without asking (--no-voice: skip without asking)
@@ -16,10 +15,9 @@ LIB="$HOME/.local/lib/claude-deck"
 BIN="$HOME/.local/bin"
 CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude-deck"
 CONF="$CONF_DIR/config"
-ADD_TO_STEAM=0 PLUGIN=1 CLAUDE=1 VOICE_CHOICE=ask
+PLUGIN=1 CLAUDE=1 VOICE_CHOICE=ask
 for a in "$@"; do
     case "$a" in
-        --add-to-steam) ADD_TO_STEAM=1 ;;
         --no-plugin)    PLUGIN=0 ;;
         --no-claude)    CLAUDE=0 ;;
         --voice)        VOICE_CHOICE=yes ;;
@@ -38,7 +36,6 @@ for c in tmux python3 curl systemctl; do
     command -v "$c" >/dev/null || die "$c is required but not installed."
 done
 systemctl --user show-environment >/dev/null 2>&1 || die "No systemd user session found (systemctl --user)."
-command -v xterm >/dev/null || warn "xterm not found: the optional Steam library shortcut won't work (the Decky panel will)."
 
 # 1. Settings (created once; yours to edit)
 mkdir -p "$CONF_DIR"
@@ -140,20 +137,11 @@ if [[ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" != yes ]]; t
 fi
 say "claude-session.service installed (if it was running: claude-session --stop to pick up changes)"
 
-# 5. Game Mode terminal look for the optional Steam shortcut (created once)
-[[ -f "$CONF_DIR/gamemode.conf" ]] || cat > "$CONF_DIR/gamemode.conf" <<'EOF'
-# Look of the "Claude Code" Steam library shortcut's terminal (xterm), read by claude-gamemode
-FONT="Hack"
-FONT_SIZE=25
-BG="#232627"
-FG="#fcfcfc"
-EOF
+# 5. Leftovers of the Steam library shortcut (removed in the alpha; the Decky panel replaces it)
+[[ -L "$BIN/claude-gamemode" ]] && rm -f "$BIN/claude-gamemode"
+rm -f "$LIB/bin/claude-gamemode" "$HOME/.local/share/applications/claude-code.desktop"
 
-# 6. App entry (also what the Steam shortcut is created from)
-mkdir -p "$HOME/.local/share/applications"
-sed "s|@HOME@|$HOME|g" "$SRC/steam/claude-code.desktop" > "$HOME/.local/share/applications/claude-code.desktop"
-
-# 7. Claude Code hooks for the project: notifications, plus voice when Piper is installed
+# 6. Claude Code hooks for the project: notifications, plus voice when Piper is installed
 mkdir -p "$PROJECT_DIR/.claude"
 VOICE=0; [[ -x "$BIN/piper" ]] && VOICE=1
 python3 -I - "$SRC/claude-hooks/hooks.json" "$PROJECT_DIR/.claude/settings.json" "$HOME" "$VOICE" <<'EOF'
@@ -182,25 +170,13 @@ dst.write_text(json.dumps(cfg, indent=2) + "\n")
 EOF
 say "hooks in $PROJECT_DIR/.claude/settings.json (notifications$( ((VOICE)) && echo ', voice'))"
 
-# 8. Decky plugin: the Game Mode panel
+# 7. Decky plugin: the Game Mode panel
 if (( PLUGIN )); then
     if [[ -d "$HOME/homebrew/plugins" ]]; then
         "$SRC/decky-plugin/install.sh"
     else
         warn "Decky Loader not found, so the Game Mode panel was skipped. Install Decky from https://decky.xyz"
         warn "(Desktop Mode), then run ./install.sh again."
-    fi
-fi
-
-# 9. Steam library shortcut (optional; Steam must be running)
-if (( ADD_TO_STEAM )); then
-    if grep -qs "claude-gamemode" "$HOME"/.local/share/Steam/userdata/*/config/shortcuts.vdf; then
-        say "Steam already has a Claude Code shortcut; skipped"
-    elif command -v steamos-add-to-steam >/dev/null; then
-        steamos-add-to-steam "$HOME/.local/share/applications/claude-code.desktop"
-        say "asked Steam to add the Claude Code shortcut"
-    else
-        warn "steamos-add-to-steam not found; add ~/.local/bin/claude-gamemode to Steam as a non-Steam game."
     fi
 fi
 

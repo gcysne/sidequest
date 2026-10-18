@@ -117,8 +117,6 @@ PANEL_WIDTH=85
 PANEL_FONT_SIZE=18
 ```
 
-The optional Steam library shortcut has its own look in `~/.config/claude-deck/gamemode.conf`.
-
 ## Troubleshooting
 
 | Problem | Try |

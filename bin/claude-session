@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Attach to the persistent Claude Code session, starting it if needed.
 # The session runs in tmux under a user systemd service, so it survives switching between Desktop Mode and
-# Game Mode, and every client (Desktop terminal, the Game Mode panel, the Steam shortcut, Remote Control)
+# Game Mode, and every client (Desktop terminal, the Game Mode panel, Remote Control)
 # sees the same conversation.
 #   claude-session                attach (start with --continue if not running)
 #   claude-session --new          start a fresh conversation if not running, then attach

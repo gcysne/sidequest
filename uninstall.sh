@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Remove claude-deck. Keeps your settings (~/.config/claude-deck), your project folder, Claude Code itself
-# and your Claude login. The Steam shortcut, if you added one, is removed in Steam
-# (library > Claude Code > Manage > Remove non-Steam game).
+# and your Claude login.
 #   ./uninstall.sh            remove scripts, service, hooks and the Decky plugin (asks for sudo)
 #   ./uninstall.sh --keep-plugin
 set -euo pipefail
@@ -14,7 +13,7 @@ KEEP_PLUGIN=0; [[ "${1:-}" == "--keep-plugin" ]] && KEEP_PLUGIN=1
 systemctl --user stop claude-session.service 2>/dev/null || true
 rm -f "$HOME/.config/systemd/user/claude-session.service"
 systemctl --user daemon-reload
-for f in "$SRC"/bin/*; do
+for f in "$SRC"/bin/* claude-gamemode; do   # claude-gamemode: from older installs
     l="$HOME/.local/bin/$(basename "$f")"
     [[ -L "$l" && "$(readlink "$l")" == "$LIB"/* ]] && rm -f "$l"
 done

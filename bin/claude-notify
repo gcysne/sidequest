@@ -3,8 +3,8 @@
 
 Reads the hook JSON on stdin (Notification or Stop event).
   Notification (permission request, waiting for input) -> always shown
-  Stop (answer finished) -> shown only in Game Mode when the Claude terminal
-                            is not on screen (otherwise the voice reads it)
+  Stop (answer finished) -> shown only in Game Mode when the claude-deck panel
+                            is closed (otherwise you're looking at the answer)
 
 Desktop Mode: desktop notification (notify-send).
 Game Mode:    Steam toast, through the claude-deck Decky plugin's spool
@@ -27,12 +27,9 @@ def desktop_mode():
                           capture_output=True).returncode == 0
 
 
-def terminal_on_screen():
-    try:
-        os.kill(int((RUN / "gamemode.pid").read_text()), 0)
-        return True
-    except (OSError, ValueError):
-        return False
+def panel_open():
+    """The Decky plugin keeps this marker while the panel's terminal is attached."""
+    return (RUN / "panel-open").exists()
 
 
 def live_spool():
@@ -84,7 +81,7 @@ def main():
         title = "Claude needs permission" if "permission" in (kind + msg).lower() else "Claude is waiting"
         where = show(title, msg, urgent=True)
     elif name == "Stop":
-        if desktop_mode() or terminal_on_screen():
+        if desktop_mode() or panel_open():
             return
         where = show("Claude finished", first_sentence(ev.get("last_assistant_message") or ""), urgent=False)
     else:

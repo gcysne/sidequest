@@ -34,6 +34,7 @@ URL_SPOOL = STATE / "open-url"
 TOAST_SPOOL = STATE / "toasts"
 ALIVE = STATE / "decky-alive"
 SESSION_CMD = str(HOME / ".local/bin/claude-session")
+PANEL_OPEN = Path(f"/run/user/{os.getuid()}/claude-deck/panel-open")  # claude-notify: skip "finished" toasts
 SPOOL_SECONDS = 0.5
 CONFIG = HOME / ".config/claude-deck/config"
 # Panel settings in the config file: (default, min, max)
@@ -80,6 +81,11 @@ class Terminal:
             finally:
                 os._exit(127)
         self.pid, self.fd = pid, fd
+        try:
+            PANEL_OPEN.parent.mkdir(parents=True, exist_ok=True)
+            PANEL_OPEN.touch()
+        except OSError:
+            pass
         _set_winsize(fd, cols, rows)
         os.set_blocking(fd, False)
         asyncio.get_running_loop().add_reader(fd, self._on_readable)
@@ -132,6 +138,7 @@ class Terminal:
         except (ProcessLookupError, ChildProcessError):
             pass
         self.pid = self.fd = None
+        PANEL_OPEN.unlink(missing_ok=True)
 
 
 TERM = Terminal()

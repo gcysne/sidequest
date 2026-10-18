@@ -22,7 +22,6 @@ and your phone.
   and, optionally, on your phone or claude.ai via Claude Code Remote Control.
 - **Notifications**: a Steam toast when Claude needs your permission or input (desktop notification in Desktop Mode).
 - **Voice (optional, recommended)**: answers read aloud, offline, with Piper ([docs/voice.md](docs/voice.md)).
-- **Optional**: a "Claude Code" Steam library shortcut with its own controller layout.
 
 ## Requirements
 
@@ -32,7 +31,7 @@ and your phone.
   [usage terms](https://www.anthropic.com/legal) apply.
 - Installed for you if missing: [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) (official
   installer) and, only to build the plugin, Node.js (official build from nodejs.org, checksum-verified, kept in
-  `~/.cache/claude-deck/node`). `tmux`, `xterm`, `python3` and `curl` ship with SteamOS.
+  `~/.cache/claude-deck/node`). `tmux`, `python3` and `curl` ship with SteamOS.
 
 ## Install
 
@@ -52,8 +51,7 @@ root). Everything else stays in your home folder. Re-run it to update
 Then switch to Game Mode and follow **[First run](docs/first-run.md)**: start Claude from the Quick Access menu,
 pick a theme, and sign in. It takes about two minutes.
 
-Options: `--voice` / `--no-voice` (answer the voice question up front), `--add-to-steam` (library shortcut),
-`--no-plugin`, `--no-claude`. Remove with `./uninstall.sh`.
+Options: `--voice` / `--no-voice` (answer the voice question up front), `--no-plugin`, `--no-claude`. Remove with `./uninstall.sh`.
 
 ## Using it
 
@@ -114,7 +112,7 @@ a separate one). `claude-session --help` lists the other commands.
 
 | Installed piece | Where |
 |---|---|
-| Scripts (`claude-session`, `claude-open-url`, `claude-notify`, `claude-tts`, `claude-gamemode`) | `~/.local/lib/claude-deck`, linked in `~/.local/bin` |
+| Scripts (`claude-session`, `claude-open-url`, `claude-notify`, `claude-tts`) | `~/.local/lib/claude-deck`, linked in `~/.local/bin` |
 | Session service | `~/.config/systemd/user/claude-session.service` |
 | Settings | `~/.config/claude-deck/` |
 | Claude Code hooks (notifications, voice) | `<project folder>/.claude/settings.json` (merged; your hooks are kept) |
@@ -125,9 +123,6 @@ a separate one). `claude-session --help` lists the other commands.
 
 - **Voice** (recommended; the installer offers it): Claude reads the start of each answer aloud, offline with Piper.
   `./install.sh --voice` adds it later. Using it, other voices, removing it: **[docs/voice.md](docs/voice.md)**.
-- **Steam library shortcut** (`./install.sh --add-to-steam`): a full-screen terminal "game" for the same session.
-  Art: `steam/artwork/make_artwork.sh <appid>`. A Legion Go controller layout for it:
-  `steam/controller/install_layout.sh` (Steam must be closed).
 
 ## Known limitations (alpha)
 

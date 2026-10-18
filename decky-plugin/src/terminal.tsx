@@ -12,8 +12,7 @@ const termInput = callable<[string], void>("term_input");
 const termResize = callable<[number, number], void>("term_resize");
 const termClose = callable<[], void>("term_close");
 
-// Same layout as the Steam Input layout of the "Claude Code" shortcut (steam/controller/make_layout.py),
-// except B, which closes the panel here; Esc moves to LT (press LT twice for Claude Code's rewind).
+// Controller layout. B closes the panel (Steam's own back button), so Esc is on LT (twice = Claude Code's rewind).
 const ESC = "\x1b";
 const ARROWS: Record<number, string> = {
   [GamepadButton.DIR_UP]: "\x1b[A", [GamepadButton.DIR_DOWN]: "\x1b[B",
@@ -171,7 +170,7 @@ export function ClaudeTerminal() {
 
     // Touch drag scrolls: every row the finger moves becomes one SGR mouse-wheel event at the finger's cell.
     // tmux (mouse on) hands it to Claude Code's full-screen view or scrolls its own history, like the
-    // touch-scroll bindings of the Claude Code shortcut. Finger down = content follows = wheel up.
+    // tmux/touch-scroll.conf bindings used by touchscreen terminals. Finger down = content follows = wheel up.
     let lastY: number | null = null;
     const cellOf = (t: Touch) => {
       const r = el.getBoundingClientRect();
