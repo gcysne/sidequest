@@ -68,4 +68,4 @@ else
     echo "Built and staged at $STAGE. To install, run decky-plugin/install.sh in a terminal (asks for sudo)." >&2
     exit 2
 fi
-say "Decky plugin installed ($DEST); Decky restarted"
+say "Decky plugin installed ($DEST); Decky loads it within a few seconds"
