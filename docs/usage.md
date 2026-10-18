@@ -65,7 +65,8 @@ Steam's own buttons (<kbd>STEAM</kbd>, <kbd>…</kbd>) keep working as usual.
 A USB or Bluetooth keyboard also works while the panel is open.
 
 **Voice:** dictated text from Claude Code's `/voice` lands in the same prompt, so you can fix it the same way before
-sending. Hold <kbd>RT</kbd> to talk in `/voice` hold mode.
+sending. Hold <kbd>RT</kbd> to talk in `/voice` hold mode. To have Claude **read its answers aloud**, see
+[Voice](voice.md).
 
 ## Touchscreen
 

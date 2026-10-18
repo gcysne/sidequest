@@ -5,6 +5,7 @@
 #   ./install.sh --add-to-steam   also add a "Claude Code" shortcut to the Steam library (once)
 #   ./install.sh --no-plugin      skip the Decky plugin (Game Mode panel)
 #   ./install.sh --no-claude      don't install Claude Code even if it's missing
+#   ./install.sh --voice          install text-to-speech without asking (--no-voice: skip without asking)
 #
 # Everything goes into your home folder. Only copying the Decky plugin into ~/homebrew/plugins needs sudo,
 # because Decky Loader owns that folder.
@@ -15,13 +16,15 @@ LIB="$HOME/.local/lib/claude-deck"
 BIN="$HOME/.local/bin"
 CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude-deck"
 CONF="$CONF_DIR/config"
-ADD_TO_STEAM=0 PLUGIN=1 CLAUDE=1
+ADD_TO_STEAM=0 PLUGIN=1 CLAUDE=1 VOICE_CHOICE=ask
 for a in "$@"; do
     case "$a" in
         --add-to-steam) ADD_TO_STEAM=1 ;;
         --no-plugin)    PLUGIN=0 ;;
         --no-claude)    CLAUDE=0 ;;
-        -h|--help)      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --voice)        VOICE_CHOICE=yes ;;
+        --no-voice)     VOICE_CHOICE=no ;;
+        -h|--help)      awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 0 ;;
         *)              echo "unknown option: $a (see --help)" >&2; exit 2 ;;
     esac
 done
@@ -96,6 +99,33 @@ done
 rm -f "$BIN/claude-session-inner"
 say "scripts in $LIB, commands linked in $BIN"
 case ":$PATH:" in *":$BIN:"*) ;; *) warn "$BIN is not in your PATH; add it to use claude-session from a terminal." ;; esac
+
+# 3b. Text-to-speech (optional, recommended): Claude's answers read aloud with Piper, offline
+voice_installed() { [[ -x "$BIN/piper" && -f "$HOME/.local/share/piper-voices/en_GB-alan-medium.onnx" ]]; }
+if voice_installed; then
+    say "text-to-speech: installed (claude-tts on|off)"
+else
+    if [[ "$VOICE_CHOICE" == ask ]]; then
+        if [[ -t 0 ]]; then
+            echo
+            printf '\033[1mText-to-speech (recommended)\033[0m\n'
+            echo "  Claude reads the start of each answer aloud, so you can follow along without reading the"
+            echo "  screen: handy in Game Mode, with the panel closed, or across the room. It runs offline on this"
+            echo "  device (Piper) and can be turned off any time with 'claude-tts off'."
+            echo "  Installs into your home folder, no sudo: uv (Python tool manager), Python 3.12 managed by uv,"
+            echo "  Piper and one English voice. About 150 MB to download."
+            read -r -p "  Install text-to-speech? [Y/n] " ans
+            [[ "${ans,,}" =~ ^(n|no)$ ]] && VOICE_CHOICE=no || VOICE_CHOICE=yes
+        else
+            VOICE_CHOICE=no
+        fi
+    fi
+    if [[ "$VOICE_CHOICE" == yes ]]; then
+        "$SRC/voice/install-voice.sh" || warn "text-to-speech install failed; the rest of claude-deck works without it"
+    else
+        say "text-to-speech skipped. Add it later: ./install.sh --voice (see docs/voice.md)"
+    fi
+fi
 
 # 4. Persistent session: user service, kept alive across Desktop/Game Mode switches (linger)
 mkdir -p "$HOME/.config/systemd/user"

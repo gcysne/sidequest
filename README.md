@@ -21,8 +21,8 @@ and your phone.
 - **One session everywhere**: the same conversation in Game Mode, in a Desktop Mode terminal (`claude-session`),
   and, optionally, on your phone or claude.ai via Claude Code Remote Control.
 - **Notifications**: a Steam toast when Claude needs your permission or input (desktop notification in Desktop Mode).
-- **Optional**: answers read aloud with [Piper](https://github.com/rhasspy/piper); a "Claude Code" Steam library
-  shortcut with its own controller layout.
+- **Voice (optional, recommended)**: answers read aloud, offline, with Piper ([docs/voice.md](docs/voice.md)).
+- **Optional**: a "Claude Code" Steam library shortcut with its own controller layout.
 
 ## Requirements
 
@@ -44,14 +44,16 @@ cd claude-deck
 ./install.sh
 ```
 
-The installer explains each step. It asks for your password once, to copy the plugin into Decky's folder
-(`~/homebrew/plugins` belongs to root). Everything else stays in your home folder. Re-run it to update
+The installer explains each step. It **offers text-to-speech** (recommended, see [voice](docs/voice.md)); the choice
+is yours. It asks for your password once, to copy the plugin into Decky's folder (`~/homebrew/plugins` belongs to
+root). Everything else stays in your home folder. Re-run it to update
 (`git pull && ./install.sh`).
 
 Then switch to Game Mode and follow **[First run](docs/first-run.md)**: start Claude from the Quick Access menu,
 pick a theme, and sign in. It takes about two minutes.
 
-Options: `--add-to-steam` (library shortcut), `--no-plugin`, `--no-claude`. Remove with `./uninstall.sh`.
+Options: `--voice` / `--no-voice` (answer the voice question up front), `--add-to-steam` (library shortcut),
+`--no-plugin`, `--no-claude`. Remove with `./uninstall.sh`.
 
 ## Using it
 
@@ -121,8 +123,8 @@ a separate one). `claude-session --help` lists the other commands.
 
 ## Optional extras
 
-- **Voice**: install Piper (`uv tool install piper-tts`) and a voice in `~/.local/share/piper-voices`, then re-run
-  `./install.sh`. `claude-tts --help` for voices and on/off.
+- **Voice** (recommended; the installer offers it): Claude reads the start of each answer aloud, offline with Piper.
+  `./install.sh --voice` adds it later. Using it, other voices, removing it: **[docs/voice.md](docs/voice.md)**.
 - **Steam library shortcut** (`./install.sh --add-to-steam`): a full-screen terminal "game" for the same session.
   Art: `steam/artwork/make_artwork.sh <appid>`. A Legion Go controller layout for it:
   `steam/controller/install_layout.sh` (Steam must be closed).
