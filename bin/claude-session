@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Attach to the persistent Claude Code session, starting it if needed.
+# The session runs in tmux under a user systemd service, so it survives
+# switching between Desktop Mode and Game Mode, and every client (Desktop
+# Konsole, the Game Mode shortcut, Remote Control) sees the same conversation.
+#   claude-session           attach (start with --continue if not running)
+#   claude-session --new     start a fresh conversation if not running, then attach
+#   claude-session --ensure  start if not running, don't attach
+#   claude-session --stop    end the session
+set -euo pipefail
+T=(tmux -L claude)
+
+ensure() {
+    if ! "${T[@]}" has-session -t claude 2>/dev/null; then
+        systemctl --user set-environment CLAUDE_SESSION_NEW="${CLAUDE_SESSION_NEW:-0}"
+        systemctl --user start claude-session.service
+        systemctl --user unset-environment CLAUDE_SESSION_NEW
+    fi
+    # Size the window to whichever client was used last (Desktop or Game Mode),
+    # and let touch/trackpad scrolling go through tmux.
+    "${T[@]}" set -g window-size latest
+    "${T[@]}" set -g mouse on
+}
+
+case "${1:-}" in
+    --stop)   systemctl --user stop claude-session.service; exit 0 ;;
+    --new)    export CLAUDE_SESSION_NEW=1 ;;
+    --ensure) ensure; exit 0 ;;
+esac
+ensure
+exec "${T[@]}" attach -t claude

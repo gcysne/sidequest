@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""claude-tts: read Claude Code answers aloud with Piper.
+
+  claude-tts hook              read a Claude Code Stop-hook JSON on stdin and speak the answer
+  claude-tts say [TEXT]        speak TEXT (or stdin), with the same cleanup as the hook
+  claude-tts on | off          enable / disable speaking from the hook
+  claude-tts stop              stop what is playing now
+  claude-tts voice NAME [SPK]  set the English voice (e.g. en_GB-alan-medium, en_GB-semaine-medium obadiah)
+  claude-tts voice-pt NAME     set the Portuguese voice
+  claude-tts voices            list installed voices and the current settings
+  claude-tts demo              play a short sample of every installed voice
+
+Long answers: only the first paragraph (the TL;DR) is read. Code blocks and
+tables are skipped. Portuguese text is read with the Portuguese voice.
+"""
+import json, os, re, signal, subprocess, sys, tempfile
+from pathlib import Path
+
+VOICES = Path.home() / ".local/share/piper-voices"
+CONF = Path.home() / ".config/claude-tts/config.json"
+PIPER = Path.home() / ".local/bin/piper"
+RUN = Path(os.environ.get("XDG_RUNTIME_DIR", tempfile.gettempdir()))
+PIDFILE = RUN / "claude-tts.pid"
+LONG = 500  # cleaned characters; above this only the first paragraph is read
+
+DEFAULTS = {"enabled": True, "voice": "en_GB-alan-medium", "speaker": None,
+            "voice_pt": "pt_BR-dii", "speed": 1.0}
+
+
+def load():
+    try:
+        return {**DEFAULTS, **json.loads(CONF.read_text())}
+    except (OSError, ValueError):
+        return dict(DEFAULTS)
+
+
+def save(c):
+    CONF.parent.mkdir(parents=True, exist_ok=True)
+    CONF.write_text(json.dumps(c, indent=1) + "\n")
+
+
+def clean(md):
+    """Markdown answer -> plain sentences worth hearing."""
+    md = re.sub(r"```.*?(```|\Z)", "\n\n", md, flags=re.S)          # code blocks
+    out = []
+    for line in md.splitlines():
+        s = line.strip()
+        if s.startswith("|") or re.fullmatch(r"[-|: ]{3,}", s):     # tables
+            out.append("")
+            continue
+        s = re.sub(r"^#+\s*", "", s)                                  # headings
+        s = re.sub(r"^([-*+]|\d+[.)])\s+", "", s)                     # list markers
+        out.append(s)
+    t = "\n".join(out)
+    t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", t)                   # links -> text
+    t = re.sub(r"https?://\S+", "link", t)
+    t = re.sub(r"[*_`~>]", "", t)                                     # emphasis, code, quotes
+    t = re.sub(r"(\S+)/(\S+)", lambda m: m.group(0) if len(m.group(0)) < 25 else "a path", t)
+    return t
+
+
+def pick(text):
+    paras = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+    if not paras:
+        return ""
+    whole = "\n".join(paras)
+    return paras[0] if len(whole) > LONG else whole
+
+
+def is_pt(text):
+    words = re.findall(r"\w+", text.lower())
+    hits = sum(w in {"não", "você", "está", "também", "então", "para", "uma", "com", "isso", "agora"}
+               for w in words)
+    return hits >= 2 or bool(re.search(r"ção|ções|ã|õ", text))
+
+
+def stop():
+    try:
+        pid = int(PIDFILE.read_text())
+        os.killpg(pid, signal.SIGTERM)
+    except (OSError, ValueError):
+        pass
+    PIDFILE.unlink(missing_ok=True)
+
+
+def speak(text, c, voice=None, speaker=None):
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return
+    if voice is None:
+        if is_pt(text) and (VOICES / f"{c['voice_pt']}.onnx").exists():
+            voice, speaker = c["voice_pt"], None
+        else:
+            voice, speaker = c["voice"], c["speaker"]
+    model = VOICES / f"{voice}.onnx"
+    stop()
+    wav = RUN / "claude-tts.wav"
+    cmd = [str(PIPER), "-m", str(model), "-f", str(wav),
+           "--length-scale", str(1 / float(c.get("speed") or 1))]
+    if speaker:
+        cfg = json.loads((VOICES / f"{voice}.onnx.json").read_text())
+        cmd += ["-s", str(cfg.get("speaker_id_map", {}).get(speaker, speaker))]
+    # Own process group so `stop` (or the next answer) can cut it off.
+    script = '"$@" && exec pw-play "$WAV"'
+    p = subprocess.Popen(["sh", "-c", script, "sh", *cmd], stdin=subprocess.PIPE,
+                         env={**os.environ, "WAV": str(wav)}, start_new_session=True,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    PIDFILE.write_text(str(p.pid))
+    p.communicate(text.encode())
+    if PIDFILE.exists() and PIDFILE.read_text() == str(p.pid):
+        PIDFILE.unlink(missing_ok=True)
+
+
+def main(argv):
+    c = load()
+    cmd = argv[0] if argv else "help"
+    if cmd == "hook":
+        try:
+            msg = json.load(sys.stdin).get("last_assistant_message") or ""
+        except ValueError:
+            return
+        if c["enabled"] and msg:
+            speak(pick(clean(msg)), c)
+    elif cmd == "say":
+        text = " ".join(argv[1:]) or sys.stdin.read()
+        speak(pick(clean(text)), c)
+    elif cmd in ("on", "off"):
+        c["enabled"] = cmd == "on"
+        save(c)
+        if cmd == "off":
+            stop()
+        print(f"claude-tts {cmd}")
+    elif cmd == "stop":
+        stop()
+    elif cmd in ("voice", "voice-pt") and len(argv) >= 2:
+        if not (VOICES / f"{argv[1]}.onnx").exists():
+            sys.exit(f"no voice {argv[1]} in {VOICES}")
+        if cmd == "voice":
+            c["voice"], c["speaker"] = argv[1], (argv[2] if len(argv) > 2 else None)
+        else:
+            c["voice_pt"] = argv[1]
+        save(c)
+        print(json.dumps(c))
+    elif cmd == "speed" and len(argv) == 2:
+        c["speed"] = float(argv[1])
+        save(c)
+        print(json.dumps(c))
+    elif cmd == "voices":
+        for f in sorted(VOICES.glob("*.onnx")):
+            spk = json.loads(Path(str(f) + ".json").read_text()).get("speaker_id_map") or {}
+            print(f.stem, ("speakers: " + ", ".join(spk)) if spk else "")
+        print("current:", json.dumps(c))
+    elif cmd == "demo":
+        samples = [("en_GB-cori-high", None, "Hello, I'm Cori, the British female voice."),
+                   ("en_GB-alan-medium", None, "Good evening. I'm Alan. All systems are online."),
+                   ("en_GB-semaine-medium", "obadiah", "Good evening. I'm Obadiah. All systems are online."),
+                   ("en_GB-semaine-medium", "spike", "Hi, I'm Spike, another British male voice."),
+                   ("pt_BR-dii", None, "Olá, eu sou a Dii, a voz em português do Brasil.")]
+        for v, s, t in samples:
+            if (VOICES / f"{v}.onnx").exists():
+                print(v, s or "")
+                speak(t, c, voice=v, speaker=s)
+    else:
+        print(__doc__)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

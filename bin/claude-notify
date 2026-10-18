@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Claude Code hook handler: tell the owner when Claude needs him.
+
+Reads the hook JSON on stdin (Notification or Stop event).
+  Notification (permission request, waiting for input) -> always shown
+  Stop (answer finished) -> shown only in Game Mode when the Claude terminal
+                            is not on screen (otherwise the voice reads it)
+
+Desktop Mode: KDE notification (notify-send).
+Game Mode:    Steam toast, through the legion-go-guards Decky plugin spool
+              (~/.local/state/legion-go-guards/toasts/*.json). When the claude-deck
+              Decky plugin exists, it will read the same kind of spool.
+"""
+import json, os, re, shutil, subprocess, sys, time
+from pathlib import Path
+
+STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+TOASTS = STATE / "legion-go-guards/toasts"
+DECKY_ALIVE = STATE / "legion-go-guards/decky-alive"
+RUN = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "claude-deck"
+LOG = STATE / "claude-deck/notify.log"
+
+
+def desktop_mode():
+    return subprocess.run(["pgrep", "-u", str(os.getuid()), "-x", "plasmashell"],
+                          capture_output=True).returncode == 0
+
+
+def terminal_on_screen():
+    try:
+        os.kill(int((RUN / "gamemode.pid").read_text()), 0)
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def decky_alive():
+    try:
+        return time.time() - DECKY_ALIVE.stat().st_mtime < 20
+    except OSError:
+        return False
+
+
+def first_sentence(text, limit=140):
+    text = re.sub(r"```.*?(```|\Z)", " ", text, flags=re.S)
+    text = re.sub(r"[*_`#>|]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    m = re.match(r"(.+?[.!?])(\s|$)", text)
+    s = m.group(1) if m else text
+    return s if len(s) <= limit else s[:limit - 1] + "…"
+
+
+def show(title, body, urgent):
+    if desktop_mode():
+        if shutil.which("notify-send"):
+            subprocess.run(["notify-send", "--app-name", "Claude Code", "--icon", "dialog-information",
+                            "--urgency", "critical" if urgent else "normal", title, body],
+                           capture_output=True, timeout=10)
+        return "desktop"
+    if decky_alive():
+        TOASTS.mkdir(parents=True, exist_ok=True)
+        path = TOASTS / f"{time.time_ns()}-{os.getpid()}.json"
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"title": title, "body": body, "critical": urgent}))
+        tmp.replace(path)  # the plugin only reads *.json
+        return "toast"
+    return "nowhere"
+
+
+def main():
+    try:
+        ev = json.load(sys.stdin)
+    except ValueError:
+        return
+    name = ev.get("hook_event_name")
+    if name == "Notification":
+        msg = ev.get("message") or "Claude needs your attention"
+        kind = ev.get("notification_type", "")
+        title = "Claude needs permission" if "permission" in (kind + msg).lower() else "Claude is waiting"
+        where = show(title, msg, urgent=True)
+    elif name == "Stop":
+        if desktop_mode() or terminal_on_screen():
+            return
+        where = show("Claude finished", first_sentence(ev.get("last_assistant_message") or ""), urgent=False)
+    else:
+        return
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with LOG.open("a") as f:
+        f.write(f"{time.strftime('%F %T')} {name} -> {where}\n")
+
+
+if __name__ == "__main__":
+    main()

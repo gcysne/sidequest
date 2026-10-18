@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Claude Code
+Comment=Claude Code IT agent for this Legion Go (persistent session)
+Exec=@HOME@/.local/bin/claude-gamemode
+Icon=utilities-terminal
+Terminal=false
+Categories=Utility;

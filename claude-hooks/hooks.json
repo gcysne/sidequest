@@ -1,0 +1,13 @@
+{
+  "Stop": [
+    {"hooks": [
+      {"type": "command", "command": "@HOME@/.local/bin/claude-tts", "args": ["hook"], "async": true, "timeout": 300},
+      {"type": "command", "command": "@HOME@/.local/bin/claude-notify", "async": true, "timeout": 30}
+    ]}
+  ],
+  "Notification": [
+    {"hooks": [
+      {"type": "command", "command": "@HOME@/.local/bin/claude-notify", "async": true, "timeout": 30}
+    ]}
+  ]
+}

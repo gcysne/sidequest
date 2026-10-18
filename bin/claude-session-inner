@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Runs inside the tmux session started by claude-session.service.
+cd "$HOME/deck-agent"
+if [[ "${CLAUDE_SESSION_NEW:-0}" == 1 ]]; then
+    claude --remote-control "Legion Go"
+else
+    claude --continue --remote-control "Legion Go" || claude --remote-control "Legion Go"
+fi
+echo; echo "Claude exited. Press Enter to close this tmux session."; read -r _
