@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Panel Mockups</title>
+<meta name="viewport" content="width=1280">
+<style>
+:root{
+  --bg:#0e141b; --bg2:#1a2029; --card:#23262e; --line:#2f3640; --text:#dcdedf; --dim:#8b929a;
+  --accent:#d97757; --accent2:#f0a07f; --steamblue:#1a9fff; --ok:#59bf40; --warn:#ffc82c;
+  --term:#101215;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#05070a;font-family:"Motiva Sans","Noto Sans","DejaVu Sans",sans-serif;color:var(--text)}
+.frame{position:relative;width:1280px;height:800px;overflow:hidden;background:linear-gradient(180deg,#1b2838 0%,var(--bg) 55%);margin:0 0 40px 0}
+.caption{position:absolute;left:16px;bottom:12px;z-index:50;background:#000c;border:1px solid #fff3;border-radius:6px;padding:6px 10px;font-size:15px;color:#fff}
+.caption b{color:var(--accent2)}
+/* Steam top bar */
+.topbar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;padding:0 18px;gap:18px;font-size:16px;color:var(--dim);z-index:5}
+.topbar .left{display:flex;gap:22px;align-items:center}
+.topbar .left .active{color:#fff;border-bottom:2px solid #fff;padding-bottom:4px}
+.topbar .status{margin-left:auto;display:flex;gap:16px;align-items:center;color:#c7ccd1}
+.ico{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:17px;position:relative}
+.claude-ico{color:var(--accent);font-size:22px;font-weight:700}
+.claude-ico.focus{outline:2px solid #fff;background:#ffffff22}
+.badge{position:absolute;top:-2px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg),0 0 10px var(--accent)}
+.spin{position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;border-top-color:var(--accent2)}
+.battery{display:inline-flex;align-items:center;gap:5px}
+.batt{width:24px;height:12px;border:2px solid #c7ccd1;border-radius:3px;position:relative}
+.batt:after{content:"";position:absolute;left:1px;top:1px;bottom:1px;width:80%;background:#c7ccd1}
+/* Library */
+.lib{position:absolute;top:64px;left:40px;right:40px}
+.lib h2{font-size:22px;margin:8px 0 14px;font-weight:600;color:#fff}
+.grid{display:flex;gap:18px}
+.cap{width:190px;height:285px;border-radius:6px;background:linear-gradient(160deg,#3a4656,#1e2630);display:flex;align-items:flex-end;padding:10px;font-size:15px;color:#fff;box-shadow:0 6px 18px #0008}
+.cap.claude{background:linear-gradient(160deg,#3b2a24,#d97757);}
+.cap.sel{outline:3px solid #fff;transform:scale(1.04)}
+.shelf{margin-top:28px;display:flex;gap:14px}
+.shelf div{width:150px;height:70px;border-radius:5px;background:#2a3340}
+.hints{position:absolute;bottom:0;left:0;right:0;height:40px;background:#0b0f14ee;display:flex;justify-content:flex-end;align-items:center;gap:22px;padding:0 18px;font-size:14px;color:var(--dim);z-index:6}
+.btn{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#000;margin-right:6px}
+.bA{background:#59bf40}.bB{background:#e04848}.bX{background:#2f8ff0}.bY{background:#f0c330}
+.bpill{display:inline-flex;padding:0 7px;height:22px;border-radius:11px;background:#dcdedf;color:#000;font-size:11px;font-weight:700;align-items:center;margin-right:6px}
+/* Dim + panel */
+.dim{position:absolute;inset:0;background:#000a;z-index:10}
+.panel{position:absolute;top:0;right:0;bottom:0;width:58%;background:var(--bg2);z-index:20;display:flex;flex-direction:column;box-shadow:-12px 0 40px #000c;border-left:1px solid #ffffff14}
+.ph{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line)}
+.ph .title{font-weight:600;font-size:17px;color:#fff}
+.ph .sub{font-size:13px;color:var(--dim)}
+.pill{font-size:12px;padding:3px 9px;border-radius:10px;background:#59bf4033;color:#9be08a}
+.pill.work{background:#d9775733;color:var(--accent2)}
+.ph .right{margin-left:auto;display:flex;gap:10px;align-items:center;color:var(--dim);font-size:14px}
+.ph .tb{padding:5px 10px;border-radius:5px;background:#ffffff10}
+.term{flex:1;background:var(--term);margin:10px 12px 0;border-radius:6px;padding:12px 14px;font-family:"DejaVu Sans Mono","Noto Sans Mono",monospace;font-size:14.5px;line-height:1.5;overflow:hidden;color:#d6d6d6;white-space:pre-wrap;border:1px solid #ffffff10;position:relative}
+.term .u{color:#9aa4ad}
+.term .b{color:#fff}
+.term .o{color:var(--accent2)}
+.term .g{color:#8fd16f}
+.term .y{color:var(--warn)}
+.term .sel{background:#ffffff1a;display:block;border-left:3px solid var(--accent);padding-left:6px;margin-left:-9px}
+.scrollbar{position:absolute;right:4px;top:10px;width:4px;height:120px;border-radius:2px;background:#ffffff30}
+.inbar{display:flex;gap:10px;align-items:center;padding:10px 12px}
+.input{flex:1;height:44px;border-radius:6px;background:#0d1117;border:1px solid var(--line);display:flex;align-items:center;padding:0 12px;color:var(--dim);font-size:15px}
+.input.focus{border-color:var(--steamblue);box-shadow:0 0 0 2px #1a9fff55;color:#fff}
+.cbtn{height:44px;min-width:44px;border-radius:6px;background:#ffffff12;display:flex;align-items:center;justify-content:center;font-size:18px;padding:0 12px}
+.cbtn.send{background:var(--accent);color:#1b0f0a;font-weight:700}
+.phint{height:36px;display:flex;gap:18px;align-items:center;justify-content:flex-end;padding:0 14px;font-size:13px;color:var(--dim);border-top:1px solid var(--line)}
+/* keyboard */
+.kbd{position:absolute;left:0;right:0;bottom:0;height:300px;background:#20252c;z-index:40;border-top:1px solid #ffffff22;padding:14px 60px;display:flex;flex-direction:column;gap:8px}
+.krow{display:flex;gap:8px;justify-content:center}
+.k{width:72px;height:56px;border-radius:6px;background:#3b424c;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.k.w{width:420px}.k.m{width:110px}.k.f{outline:3px solid #fff}
+/* QAM */
+.qam{position:absolute;top:0;right:0;bottom:0;width:430px;background:#191d23;z-index:20;display:flex;box-shadow:-10px 0 30px #000b}
+.qtabs{width:62px;background:#14171c;display:flex;flex-direction:column;align-items:center;gap:20px;padding-top:62px;color:var(--dim);font-size:20px}
+.qtabs .on{color:#fff;background:#ffffff14;border-radius:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.qbody{flex:1;padding:14px 16px;overflow:hidden}
+.qbody h3{margin:6px 0 14px;font-size:15px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.qrow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #ffffff10;font-size:15px}
+.qbtn{margin-top:14px;height:46px;border-radius:5px;background:#3d4450;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff}
+.qbtn.f{background:#fff;color:#000;font-weight:600}
+.plug{display:flex;align-items:center;gap:10px;padding:12px;background:#ffffff0c;border-radius:6px;margin-bottom:8px;font-size:15px}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--steamblue);position:relative}
+.toggle:after{content:"";position:absolute;right:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff}
+.legend{position:absolute;top:120px;left:40px;width:520px;z-index:30;display:flex;flex-direction:column;gap:18px}
+.lrow{display:flex;gap:18px;align-items:center;background:#000a;border:1px solid #ffffff1c;border-radius:8px;padding:14px 16px;font-size:15px}
+.lrow .ico{width:40px;height:40px;background:#ffffff0c}
+.note{font-size:13px;color:var(--dim)}
+.toast{position:absolute;right:16px;bottom:56px;width:360px;background:#2b313a;border-radius:8px;z-index:30;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 24px #000b;border-left:4px solid var(--accent)}
+.caption.top{top:60px;bottom:auto;max-width:500px}
+</style>
+</head>
+<body>
+
+<!-- Frame 1: idle library -->
+<section class="frame" id="f1">
+  <div class="topbar">
+    <div class="left"><span class="active">Home</span><span>Library</span><span>Store</span></div>
+    <div class="status">
+      <span class="ico claude-ico" title="Claude">✳</span>
+      <span class="ico">🔔</span><span class="ico">ᛒ</span><span class="ico">📶</span>
+      <span class="battery"><span class="batt"></span>87%</span><span>10:42</span>
+    </div>
+  </div>
+  <div class="lib"><h2>Recent games</h2>
+    <div class="grid"><div class="cap sel">Hades II</div><div class="cap">Balatro</div><div class="cap claude">Claude Code</div><div class="cap">Celeste</div><div class="cap">Cyberpunk 2077</div></div>
+    <div class="shelf"><div></div><div></div><div></div><div></div><div></div><div></div></div>
+  </div>
+  <div class="hints"><span><span class="btn bA">A</span>Select</span><span><span class="bpill">☰</span>Menu</span></div>
+  <div class="caption"><b>1 · Idle.</b> Claude icon (✳) sits left of Steam's own status icons, only while the Claude session runs. It is focusable with the d-pad like the bell.</div>
+</section>
+
+<!-- Frame 2: icon states -->
+<section class="frame" id="f2">
+  <div class="topbar">
+    <div class="left"><span class="active">Home</span><span>Library</span><span>Store</span></div>
+    <div class="status">
+      <span class="ico claude-ico focus">✳<span class="badge"></span></span>
+      <span class="ico">🔔</span><span class="ico">ᛒ</span><span class="ico">📶</span>
+      <span class="battery"><span class="batt"></span>87%</span><span>10:42</span>
+    </div>
+  </div>
+  <div class="dim" style="background:#0007"></div>
+  <div class="legend">
+    <div class="lrow"><span class="ico claude-ico">✳</span><div><b>Idle</b><div class="note">Session running, waiting for you. Static icon.</div></div></div>
+    <div class="lrow"><span class="ico claude-ico">✳<span class="spin"></span></span><div><b>Working</b><div class="note">Claude is running tools or writing. Thin rotating ring.</div></div></div>
+    <div class="lrow"><span class="ico claude-ico">✳<span class="badge"></span></span><div><b>Needs you</b><div class="note">Permission prompt or question. Orange dot, same moment the toast fires.</div></div></div>
+    <div class="lrow"><span class="ico" style="color:#555;font-size:22px">✳</span><div><b>Hidden</b><div class="note">No session running: icon not shown at all.</div></div></div>
+  </div>
+  <div class="toast"><span class="ico claude-ico">✳</span><div><b>Claude needs you</b><div class="note">Allow: rsync from WD drive?</div></div></div>
+  <div class="hints"><span><span class="btn bA">A</span>Open Claude</span></div>
+  <div class="caption"><b>2 · Icon states.</b> Focused icon (white ring) + "needs you" toast. A opens the panel; tapping the icon on the touchscreen does the same.</div>
+</section>
+
+<!-- Frame 3: panel open -->
+<section class="frame" id="f3">
+  <div class="topbar">
+    <div class="left"><span class="active">Home</span><span>Library</span><span>Store</span></div>
+    <div class="status"><span class="ico claude-ico">✳</span><span class="ico">🔔</span><span class="battery"><span class="batt"></span>87%</span><span>10:42</span></div>
+  </div>
+  <div class="lib"><h2>Recent games</h2><div class="grid"><div class="cap">Hades II</div><div class="cap">Balatro</div><div class="cap claude">Claude Code</div></div></div>
+  <div class="dim"></div>
+  <div class="panel">
+    <div class="ph"><span class="claude-ico" style="font-size:22px">✳</span><div><div class="title">Claude</div><div class="sub">~/deck-agent · session "claude"</div></div><span class="pill">idle</span>
+      <div class="right"><span class="tb">A− A+</span><span class="tb">⤢ Width</span><span class="tb"><span class="btn bB" style="width:18px;height:18px;font-size:10px">B</span>Close</span></div></div>
+    <div class="term"><span class="u">&gt; how long until the copy finishes?</span>
+
+<span class="o">●</span> <span class="b">About 1.5 hours left: 6 GB of about 140 GB copied at 23 MB/s.</span>
+
+  Ran 1 shell command
+
+<span class="o">●</span> Yes, I'll pick up automatically. A background watcher
+  notifies me when the copy ends.
+
+<span class="u">────────────────────────────────────────────────────</span>
+<span class="u">&gt;</span> <span style="background:#ddd;color:#000"> </span>
+<span class="u">────────────────────────────────────────────────────</span>
+<span class="u">  ⏵⏵ auto mode on · esc to interrupt</span><div class="scrollbar"></div></div>
+    <div class="inbar"><div class="input">Type a message… (opens Steam keyboard)</div><div class="cbtn">🎤</div><div class="cbtn">⎋</div><div class="cbtn send">➤</div></div>
+    <div class="phint"><span><span class="btn bA">A</span>Type</span><span><span class="btn bY">Y</span>Voice</span><span><span class="btn bX">X</span>Esc</span><span>R-stick Scroll</span><span><span class="btn bB">B</span>Close</span></div>
+  </div>
+  <div class="caption top"><b>3 · Panel open (right, full height, ~58% width).</b> Live terminal of the same tmux session; text box below sends to it. Library dimmed.</div>
+</section>
+
+<!-- Frame 4: permission prompt -->
+<section class="frame" id="f4">
+  <div class="topbar"><div class="status"><span class="ico claude-ico">✳<span class="badge"></span></span><span class="ico">🔔</span><span class="battery"><span class="batt"></span>86%</span><span>10:51</span></div></div>
+  <div class="dim"></div>
+  <div class="panel">
+    <div class="ph"><span class="claude-ico" style="font-size:22px">✳</span><div><div class="title">Claude</div><div class="sub">~/deck-agent · session "claude"</div></div><span class="pill work">needs you</span>
+      <div class="right"><span class="tb"><span class="btn bB" style="width:18px;height:18px;font-size:10px">B</span>Close</span></div></div>
+    <div class="term"><span class="o">●</span> I'm starting a read-only rsync service on the drive.
+
+<span class="y">╭──────────────────────────────────────────────────╮</span>
+<span class="y">│</span> <span class="b">Bash command</span>
+<span class="y">│</span>   ssh wd 'rsync --daemon --port=8730 ...'
+<span class="y">│</span>
+<span class="y">│</span> Do you want to proceed?
+<span class="sel"><span class="y">│</span> <span class="b">❯ 1. Yes</span></span><span class="y">│</span>   2. Yes, and don't ask again for ssh wd
+<span class="y">│</span>   3. No, and tell Claude what to do differently
+<span class="y">╰──────────────────────────────────────────────────╯</span></div>
+    <div class="inbar"><div class="input">Type a message…</div><div class="cbtn">🎤</div><div class="cbtn">⎋</div><div class="cbtn send">➤</div></div>
+    <div class="phint"><span>D-pad ⇅ Choose</span><span><span class="btn bA">A</span>Confirm</span><span><span class="btn bX">X</span>Esc</span><span><span class="btn bB">B</span>Close</span></div>
+  </div>
+  <div class="caption top"><b>4 · Permission prompt.</b> Claude's own menu, driven by the controller: d-pad = arrow keys, A = Enter, X = Esc. Hint bar adapts.</div>
+</section>
+
+<!-- Frame 5: typing -->
+<section class="frame" id="f5">
+  <div class="dim"></div>
+  <div class="panel" style="bottom:300px">
+    <div class="ph"><span class="claude-ico" style="font-size:22px">✳</span><div class="title">Claude</div><span class="pill">idle</span><div class="right"><span class="tb">B Close</span></div></div>
+    <div class="term" style="font-size:14px"><span class="o">●</span> Should I start the ROM copy now with rsync over SSH?
+
+<span class="u">&gt;</span> <span style="background:#ddd;color:#000"> </span></div>
+    <div class="inbar"><div class="input focus">yes, proceed with the plan_</div><div class="cbtn send">➤</div></div>
+  </div>
+  <div class="kbd">
+    <div class="krow"><div class="k">q</div><div class="k">w</div><div class="k">e</div><div class="k">r</div><div class="k">t</div><div class="k">y</div><div class="k">u</div><div class="k">i</div><div class="k">o</div><div class="k">p</div><div class="k m">⌫</div></div>
+    <div class="krow"><div class="k">a</div><div class="k">s</div><div class="k">d</div><div class="k">f</div><div class="k">g</div><div class="k">h</div><div class="k">j</div><div class="k">k</div><div class="k">l</div><div class="k m">⏎</div></div>
+    <div class="krow"><div class="k m">⇧</div><div class="k">z</div><div class="k">x</div><div class="k">c</div><div class="k">v</div><div class="k">b</div><div class="k">n</div><div class="k">m</div><div class="k">,</div><div class="k">.</div></div>
+    <div class="krow"><div class="k m">&amp;123</div><div class="k w f">space</div><div class="k m">🌐</div><div class="k m">⌨ hide</div></div>
+  </div>
+  <div class="caption" style="bottom:312px"><b>5 · Typing.</b> Steam keyboard; panel shrinks above it. Enter sends the text to the session.</div>
+</section>
+
+<!-- Frame 6: QAM fallback / settings -->
+<section class="frame" id="f6">
+  <div class="topbar"><div class="left"><span class="active">Home</span><span>Library</span></div><div class="status"><span class="ico">🔔</span><span class="battery"><span class="batt"></span>87%</span><span>10:42</span></div></div>
+  <div class="lib"><h2>Recent games</h2><div class="grid"><div class="cap">Hades II</div><div class="cap">Balatro</div></div></div>
+  <div class="qam">
+    <div class="qtabs"><span>🔔</span><span>⚡</span><span>⚙</span><span class="on">🔌</span></div>
+    <div class="qbody">
+      <h3>Decky › Claude</h3>
+      <div class="plug"><span class="claude-ico" style="font-size:22px">✳</span><div><b>Session running</b><div class="note">~/deck-agent · idle · 2 h 14 m</div></div></div>
+      <div class="qbtn f">Open Claude panel</div>
+      <div class="qrow"><span>Status-bar icon</span><span class="toggle"></span></div>
+      <div class="qrow"><span>Panel width</span><span class="note">58%</span></div>
+      <div class="qrow"><span>Read answers aloud</span><span class="toggle"></span></div>
+      <div class="qrow"><span>Restart session</span><span class="note">›</span></div>
+    </div>
+  </div>
+  <div class="caption"><b>6 · Quick Access Menu entry</b> (always present; fallback if the status-bar icon breaks after a Steam update). Also holds settings.</div>
+</section>
+
+</body>
+</html>
