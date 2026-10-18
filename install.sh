@@ -36,7 +36,7 @@ mkdir -p "$HOME/.config/claude-deck"
 [[ -f "$HOME/.config/claude-deck/gamemode.conf" ]] || cat > "$HOME/.config/claude-deck/gamemode.conf" <<'EOC'
 # Game Mode terminal (xterm) settings, read by claude-gamemode
 FONT="Hack"
-FONT_SIZE=15
+FONT_SIZE=25
 BG="#232627"
 FG="#fcfcfc"
 EOC
