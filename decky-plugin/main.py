@@ -16,16 +16,21 @@ import base64
 import json
 import fcntl
 import os
-import pty
 import re
 import signal
 import struct
 import subprocess
-import termios
 import time
 from pathlib import Path
 
 import decky
+
+# Decky's bundled Python may lack termios (v3.3.0 ships 3.14 without it), and the pty module imports it.
+# Use os.forkpty() (core posix module) and fall back to Linux's TIOCSWINSZ value.
+try:
+    from termios import TIOCSWINSZ
+except ImportError:
+    TIOCSWINSZ = 0x5414
 
 TMUX_SOCKET = "claude"
 HOME = Path(decky.DECKY_USER_HOME)
@@ -59,7 +64,7 @@ def _tmux(*args, timeout=5):
 
 
 def _set_winsize(fd, cols, rows):
-    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", int(rows), int(cols), 0, 0))
+    fcntl.ioctl(fd, TIOCSWINSZ, struct.pack("HHHH", int(rows), int(cols), 0, 0))
 
 
 class Terminal:
@@ -74,7 +79,7 @@ class Terminal:
         return self.fd is not None
 
     def open(self, session, cols, rows):
-        pid, fd = pty.fork()
+        pid, fd = os.forkpty()
         if pid == 0:  # child: become the tmux client
             try:
                 os.execvpe("tmux", ["tmux", "-L", TMUX_SOCKET, "attach-session", "-t", session], _env())
