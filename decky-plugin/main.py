@@ -55,6 +55,13 @@ def _env():
                TERM="xterm-256color", COLORTERM="truecolor", LANG=os.environ.get("LANG", "C.UTF-8"))
     env["PATH"] = f"{decky.DECKY_USER_HOME}/.local/bin:/usr/local/bin:/usr/bin:/bin"
     env.pop("TMUX", None)
+    # Decky is a PyInstaller bundle: it points LD_LIBRARY_PATH at its own unpacked libs, which break system
+    # programs (v3.3.0's libtinfo needs a newer glibc, so bash fails). Restore the original value, if any.
+    orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+    if orig:
+        env["LD_LIBRARY_PATH"] = orig
+    else:
+        env.pop("LD_LIBRARY_PATH", None)
     return env
 
 
