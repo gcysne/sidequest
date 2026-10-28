@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Per-second performance log for the running game (Game Mode), without MangoHud.
+
+FPS comes from gamescope's stats pipe (/run/user/<uid>/gamescope.*/stats.pipe: "fps=..." and "focus=..." lines,
+the same feed Steam's performance overlay reads). Do not run while Steam's performance overlay (mangoapp) is on:
+both would read the same pipe. Also logs CPU temp/clocks, GPU clock/load/power, socket power, TDP and Ryujinx
+"waiting on CPU" stalls.
+
+Usage: perf-monitor [--until-exit PROCESS] [--out FILE]   (default: until gamescope-wl exits, notes/perf-logs/<time>.csv)
+Run it detached: systemd-run --user --unit=perf-monitor <path>/perf-monitor --until-exit <game process>
+Summary of a log: perf-monitor --summary FILE
+"""
+import csv, glob, os, re, select, subprocess, sys, time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
+from sqpaths import notes_dir  # noqa: E402
+
+OUTDIR = notes_dir() / "perf-logs"
+
+
+def read(p, conv=float, default=""):
+    try:
+        return conv(Path(p).read_text().strip())
+    except (OSError, ValueError):
+        return default
+
+
+def hwmon(name):
+    for d in glob.glob("/sys/class/hwmon/hwmon*"):
+        if read(f"{d}/name", str) == name:
+            return d
+    return None
+
+
+def summary(path):
+    rows = [r for r in csv.DictReader(open(path)) if r["fps"]]
+    game = [r for r in rows if r["focus"] not in ("steam", "")] or rows
+    if not game:
+        print("no fps samples"); return
+    fps = [float(r["fps"]) for r in game]
+    slow = [r for r in game if float(r["fps"]) < 25]
+    print(f"{path}: {len(game)} s with game focused | fps avg {sum(fps)/len(fps):.1f}, min {min(fps):.1f}, "
+          f"seconds under 25 fps: {len(slow)}")
+    for r in slow[:40]:
+        print(f"  {r['time']} fps {float(r['fps']):5.1f} | CPU {r['cpu_c']}C {r['cpu_mhz_avg']}/{r['cpu_mhz_max']} MHz "
+              f"| GPU {r['gpu_mhz']} MHz {r['gpu_busy']}% | {r['socket_w']} W TDP {r['tdp_w']} | stalls {r['ryujinx_stalls']}")
+
+
+def main():
+    if "--summary" in sys.argv:
+        summary(sys.argv[sys.argv.index("--summary") + 1]); return
+    proc = sys.argv[sys.argv.index("--until-exit") + 1] if "--until-exit" in sys.argv else "gamescope-wl"
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    out = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else OUTDIR / f"monitor-{time.strftime('%Y%m%d-%H%M%S')}.csv"
+    pipes = glob.glob(f"/run/user/{os.getuid()}/gamescope.*/stats.pipe")
+    fd = os.open(pipes[0], os.O_RDONLY | os.O_NONBLOCK) if pipes else None
+    k10, gpu = hwmon("k10temp"), hwmon("amdgpu")
+    busy = (glob.glob("/sys/class/drm/card*/device/gpu_busy_percent") or [None])[0]
+    tdp_attr = (glob.glob("/sys/class/firmware-attributes/*/attributes/ppt_pl1_spl/current_value") or [""])[0]  # sustained power limit, if the firmware exposes it
+    rlog = max(glob.glob(str(Path.home() / ".config/Ryujinx/Logs/*.log")), key=os.path.getmtime, default=None)
+    rpos = os.path.getsize(rlog) if rlog else 0
+    buf, focus = b"", ""
+    fields = ["time", "focus", "fps", "cpu_c", "cpu_mhz_avg", "cpu_mhz_max", "gpu_mhz", "gpu_busy", "gpu_c",
+              "socket_w", "tdp_w", "ryujinx_stalls"]
+    with out.open("w", newline="") as f:
+        w = csv.DictWriter(f, fields); w.writeheader()
+        print(f"logging to {out}", flush=True)
+        while subprocess.run(["pgrep", "-x", proc], capture_output=True).returncode == 0:
+            t0 = time.time(); fps = []
+            while time.time() - t0 < 1.0:
+                if fd is None:
+                    time.sleep(0.2); continue
+                r, _, _ = select.select([fd], [], [], 0.2)
+                if r:
+                    try:
+                        chunk = os.read(fd, 4096)
+                    except BlockingIOError:
+                        chunk = b""
+                    buf += chunk
+                    *lines, buf = buf.split(b"\n")
+                    for l in lines:
+                        k, _, v = l.decode(errors="replace").partition("=")
+                        if k == "fps":
+                            try: fps.append(float(v))
+                            except ValueError: pass
+                        elif k == "focus":
+                            focus = v
+            freqs = [read(p, int, 0) for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq")]
+            stalls = 0
+            if rlog:
+                try:
+                    with open(rlog, "rb") as lf:
+                        lf.seek(rpos); data = lf.read(); rpos += len(data)
+                    stalls = data.count(b"too slow, waiting on CPU")
+                except OSError:
+                    pass
+            w.writerow({
+                "time": time.strftime("%H:%M:%S"), "focus": focus,
+                "fps": f"{sum(fps)/len(fps):.1f}" if fps else "",
+                "cpu_c": f"{read(f'{k10}/temp1_input', float, 0)/1000:.0f}" if k10 else "",
+                "cpu_mhz_avg": f"{sum(freqs)/len(freqs)/1000:.0f}" if freqs else "",
+                "cpu_mhz_max": f"{max(freqs)/1000:.0f}" if freqs else "",
+                "gpu_mhz": f"{read(f'{gpu}/freq1_input', float, 0)/1e6:.0f}" if gpu else "",
+                "gpu_busy": read(busy, int, "") if busy else "",
+                "gpu_c": f"{read(f'{gpu}/temp1_input', float, 0)/1000:.0f}" if gpu else "",
+                "socket_w": f"{(read(f'{gpu}/power1_average', float, 0) or read(f'{gpu}/power1_input', float, 0))/1e6:.1f}" if gpu else "",
+                "tdp_w": read(tdp_attr, int, "") if tdp_attr else "", "ryujinx_stalls": stalls,
+            })
+            f.flush()
+    print(f"{proc} exited; log at {out}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

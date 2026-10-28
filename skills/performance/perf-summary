@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""Summarize MangoHud logs (CSV) in notes/perf-logs/: per session, skip the first 60 s (loading), then report
+avg fps, 1% low, % of time under 55 fps, GPU/CPU load, power, temps. Usage: perf-summary [files...]"""
+import csv, glob, os, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
+from sqpaths import notes_dir  # noqa: E402
+files = sys.argv[1:] or sorted(f for f in glob.glob(str(notes_dir() / "perf-logs/*.csv")) if "summary" not in f and "monitor-" not in f)
+for p in files:
+    rows = list(csv.reader(open(p, errors="replace")))
+    try:
+        i = next(n for n, r in enumerate(rows) if r and r[0] == "fps")
+    except StopIteration:
+        continue
+    h = rows[i]; data = [dict(zip(h, r)) for r in rows[i + 1:] if len(r) == len(h)]
+    t = 0.0; keep = []
+    for d in data:
+        ft = float(d["frametime"] or 0); t += ft / 1000
+        if t > 60 and ft > 0: keep.append(d)
+    if len(keep) < 100:
+        print(f"{os.path.basename(p)}: too short ({t:.0f} s)"); continue
+    ft = sorted(float(d["frametime"]) for d in keep); n = len(ft); secs = sum(ft) / 1000
+    k = max(1, n // 100); low1 = 1000 / (sum(ft[-k:]) / k)
+    slow = sum(f for f in ft if f > 1000 / 55) / 1000 / secs * 100
+    def m(key):
+        v = [float(d[key]) for d in keep if d.get(key) not in (None, "", "-1")]; return sum(v) / len(v) if v else -1
+    print(f"{os.path.basename(p)}: {secs/60:.1f} min | avg {n/secs:.1f} fps | 1% low {low1:.1f} | <55fps {slow:.0f}% of time | "
+          f"GPU {m('gpu_load'):.0f}% {m('gpu_core_clock'):.0f} MHz {m('gpu_power'):.1f} W | CPU {m('cpu_load'):.0f}% | "
+          f"{m('cpu_temp'):.0f}/{m('gpu_temp'):.0f} C")
