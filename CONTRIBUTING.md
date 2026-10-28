@@ -30,6 +30,12 @@ you verified on the device, with the OS version.
 Subject `topic: message`, where the topic is the module: `plugin`, `session`, `voice`, `agent`, `skill`, `device`,
 `os`, `stack`, `docs`, `ci`, `repo`. Example: `device: legion-go: performance profile on AC fixes throttling`.
 
+## Branches and reviews
+
+Work on a branch and open a pull request against `main`; the code owners in `.github/CODEOWNERS` review it. Code
+owners (maintainers) push their own changes directly. Device maintainers can be added as code owners of their device
+folder.
+
 ## Changing code
 
 - Keep it **device-agnostic**: no hard-coded model, resolution or button names. Device-specific values go in
