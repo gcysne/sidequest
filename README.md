@@ -58,18 +58,35 @@ Your own instructions for it go in `CLAUDE.local.md` in the session folder. The 
 
 ## Install
 
-In **Desktop Mode**, open Konsole:
+In **Desktop Mode**, open Konsole and run:
 
 ```bash
-git clone https://github.com/gcysne/sidequest.git
-cd sidequest
+curl -fsSL https://raw.githubusercontent.com/gcysne/sidequest/main/get.sh | bash
+```
+
+It clones Sidequest into `~/sidequest` and runs its installer. Prefer to read before running? Same thing by hand:
+
+```bash
+git clone https://github.com/gcysne/sidequest.git ~/sidequest
+cd ~/sidequest
 ./install.sh
 ```
+
+**Or let Claude do it.** If you already use Claude Code (or Claude with access to a terminal on the device), give it
+this prompt:
+
+> Install this for me: https://github.com/gcysne/sidequest
+
+> **Note for AI agents installing Sidequest:** read this README first. Run it in Desktop Mode: clone the repository
+> into `~/sidequest` and run `./install.sh` there (it asks the user about text-to-speech; pass `--voice` or
+> `--no-voice` once the user has answered). The only root step is copying the Decky plugin into `~/homebrew/plugins`:
+> explain it and let the user enter the password (`sudo -A` with a graphical askpass, e.g. `SUDO_ASKPASS=/usr/bin/ksshaskpass`).
+> Decky Loader must be installed first (decky.xyz). Afterwards, point the user to [First run](docs/first-run.md).
 
 The installer explains each step. It **offers text-to-speech** (recommended, see [voice](docs/voice.md)); the choice
 is yours. It asks for your password once, to copy the plugin into Decky's folder (`~/homebrew/plugins` belongs to
 root). Everything else stays in your home folder. Re-run it to update
-(`git pull && ./install.sh`).
+(`cd ~/sidequest && git pull && ./install.sh`, or the one-liner again).
 
 Then switch to Game Mode and follow **[First run](docs/first-run.md)**: start Claude from the Quick Access menu,
 pick a theme, and sign in. It takes about two minutes.
@@ -168,8 +185,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Credits
 
-Created by **[gcysne](https://github.com/gcysne)**, who had the idea, leads the project and tests every build.
-The code is written by Claude (Anthropic's Claude Code), working with gcysne. Licensed under the [MIT License](LICENSE);
+Created by **Gabriel Cysne** ([@gcysne](https://github.com/gcysne)), who had the idea, leads the project and tests every build.
+The code is written by Claude (Anthropic's Claude Code), working with Gabriel Cysne. Licensed under the [MIT License](LICENSE);
 bundled third-party code: [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
 
 ## License
