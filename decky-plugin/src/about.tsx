@@ -48,7 +48,7 @@ function AboutPage() {
     <div>
       <div style={{ fontSize: "1.8em", fontWeight: "bold" }}>✳ Sidequest</div>
       <div style={{ fontSize: "1.1em" }}>for Claude Code</div>
-      <div style={muted}>{version ? `Version ${version} (alpha)` : "Alpha"}</div>
+      <div style={muted}>{version ? `Version ${version}` : "Alpha"}</div>
       <p>
         Claude Code on SteamOS handhelds, in Game Mode. One persistent Claude Code session that you open as a side
         panel from Steam's status bar, drive with the controller and the touchscreen, and also reach from Desktop

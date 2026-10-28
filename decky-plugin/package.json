@@ -1,6 +1,6 @@
 {
   "name": "sidequest-decky",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "description": "Claude Code panel for SteamOS Game Mode",
   "type": "module",
   "scripts": {
