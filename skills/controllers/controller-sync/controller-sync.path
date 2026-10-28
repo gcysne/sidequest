@@ -1,0 +1,9 @@
+[Unit]
+Description=Sidequest: re-sync Dolphin controller names when Steam's controller slots change
+
+[Path]
+PathChanged=%h/.local/share/Steam/config/virtualgamepadinfo.txt
+Unit=controller-sync.service
+
+[Install]
+WantedBy=default.target

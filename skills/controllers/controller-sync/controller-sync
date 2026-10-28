@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Keep name-based emulator controller bindings in step with Steam's controller slots.
+
+In Game Mode every game sees one Steam virtual gamepad per controller, in Steam's player order. Steam writes the
+slot list (name per slot) to ~/.local/share/Steam/config/virtualgamepadinfo.txt whenever controllers change.
+Most emulators bind by index and need nothing. Dolphin binds by "SDL/<n>/<device name>", where the name is the
+real controller's name (from that file) and <n> counts devices with the same name, so it breaks whenever the set
+of controllers changes. This rewrites Dolphin's GCPad1-4 and Wiimote1-4 Device lines so player N = Steam slot N-1.
+
+Run by controller-sync.path when the file changes; `controller-sync --status` prints the slots and the result.
+`controller-sync --install` installs and starts the user units (no root); `--uninstall` removes them.
+Skips the rewrite while Dolphin is running (it saves its own config on exit); the next change or run applies it.
+"""
+import os, re, shutil, subprocess, sys, time
+from pathlib import Path
+
+INFO = Path.home() / ".local/share/Steam/config/virtualgamepadinfo.txt"
+DOLPHIN = Path.home() / ".var/app/org.DolphinEmu.dolphin-emu/config/dolphin-emu"
+LOG = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "sidequest/controller-sync.log"
+
+
+def log(msg):
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with LOG.open("a") as f:
+        f.write(f"{time.strftime('%F %T')} {msg}\n")
+
+
+def slots():
+    out, cur = {}, None
+    for line in INFO.read_text(errors="replace").splitlines():
+        m = re.match(r"\[slot (\d+)\]", line.strip())
+        if m:
+            cur = int(m.group(1)); out[cur] = {}
+        elif cur is not None and "=" in line:
+            k, v = line.split("=", 1); out[cur][k.strip()] = v.strip()
+    return [out[i]["name"] for i in sorted(out) if out[i].get("name")]
+
+
+def dolphin_devices(names):
+    seen, devs = {}, []
+    for n in names:
+        devs.append(f"SDL/{seen.get(n, 0)}/{n}")
+        seen[n] = seen.get(n, 0) + 1
+    return devs
+
+
+def rewrite(path, prefix, devs):
+    text = path.read_text()
+    parts = re.split(r"(?m)^(?=\[)", text)
+    for i, b in enumerate(parts):
+        m = re.match(rf"\[{prefix}([1-4])\]", b)
+        if m and int(m.group(1)) <= len(devs):
+            parts[i] = re.sub(r"(?m)^Device = .*$", f"Device = {devs[int(m.group(1)) - 1]}", b, count=1)
+    new = "".join(parts)
+    if new != text:
+        path.write_text(new)
+        return True
+    return False
+
+
+UNITS = ("controller-sync.path", "controller-sync.service")
+UNIT_DIR = Path.home() / ".config/systemd/user"
+
+
+def install(remove=False):
+    here = Path(__file__).resolve().parent
+    if remove:
+        subprocess.run(["systemctl", "--user", "disable", "--now", UNITS[0]])
+        for u in UNITS:
+            (UNIT_DIR / u).unlink(missing_ok=True)
+    else:
+        UNIT_DIR.mkdir(parents=True, exist_ok=True)
+        for u in UNITS:
+            shutil.copy(here / u, UNIT_DIR / u)
+    subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+    if not remove:
+        subprocess.run(["systemctl", "--user", "enable", "--now", UNITS[0]], check=True)
+    print(("removed " if remove else "installed ") + ", ".join(UNITS))
+    return 0
+
+
+def main():
+    if "--install" in sys.argv or "--uninstall" in sys.argv:
+        return install(remove="--uninstall" in sys.argv)
+    names = slots() if INFO.exists() else []
+    devs = dolphin_devices(names)
+    if "--status" in sys.argv:
+        for i, n in enumerate(names):
+            print(f"player {i + 1}: {n}  -> Dolphin {devs[i]}")
+        return 0
+    if not names:
+        log("no Steam slot info; nothing to do")
+        return 0
+    if subprocess.run(["pgrep", "-x", "dolphin-emu"], capture_output=True).returncode == 0:
+        log(f"Dolphin running; skipped ({names})")
+        return 0
+    changed = [f for f, p in (("GCPadNew.ini", "GCPad"), ("WiimoteNew.ini", "Wiimote"))
+               if (DOLPHIN / f).exists() and rewrite(DOLPHIN / f, p, devs)]
+    log(f"slots {names}: Dolphin {'updated ' + ', '.join(changed) if changed else 'already in sync'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

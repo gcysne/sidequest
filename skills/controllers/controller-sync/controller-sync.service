@@ -1,0 +1,6 @@
+[Unit]
+Description=Sidequest: sync Dolphin controller names with Steam's controller slots
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/lib/sidequest/skills/controllers/controller-sync/controller-sync
