@@ -18,10 +18,22 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-          shellcheck -S warning install.sh uninstall.sh lib/common.sh voice/install-voice.sh decky-plugin/install.sh bin/claude-session bin/claude-session-inner bin/claude-open-url
+          shellcheck -S warning install.sh uninstall.sh lib/*.sh voice/install-voice.sh decky-plugin/install.sh \
+            bin/claude-session bin/claude-session-inner bin/claude-open-url \
+            $(grep -rlE '^#!/usr/bin/env bash|^#!/bin/bash' skills devices os stacks lib)
 
       - name: Check Python syntax
-        run: python3 -m py_compile decky-plugin/main.py bin/claude-notify bin/claude-tts
+        run: |
+          python3 -m py_compile decky-plugin/main.py bin/claude-notify bin/claude-tts bin/sidequest-update-check
+          for f in $(grep -rlE '^#!/usr/bin/env python3' skills devices lib); do python3 -m py_compile "$f"; done
+
+      - name: Check devices and skills
+        run: pip install --quiet pyyaml && python3 ci/check-devices.py
+
+      - name: Install / uninstall test (throwaway home)
+        run: |
+          sudo apt-get install -y -qq tmux
+          ci/test-install.sh
 
       - uses: actions/setup-node@v4
         with:
