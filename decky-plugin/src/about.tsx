@@ -111,16 +111,17 @@ function CreditsPage() {
   return (
     <div>
       <div style={{ ...h2, marginTop: 0 }}>Creator</div>
-      <div style={{ fontSize: "1.2em", fontWeight: "bold" }}>gcysne</div>
+      <div style={{ fontSize: "1.2em", fontWeight: "bold" }}>Gabriel Cysne</div>
       <div>
         Idealizer and lead of the project: had the idea, sets its direction and design, and tests every build on
         real hardware. Main contributor.
       </div>
       <Focusable style={linkRow}>
+        <DialogButton style={btn} onClick={() => openUrl("https://www.linkedin.com/in/gcysne")}>linkedin.com/in/gcysne</DialogButton>
         <DialogButton style={btn} onClick={() => openUrl("https://github.com/gcysne")}>github.com/gcysne</DialogButton>
       </Focusable>
       <div style={h2}>Code</div>
-      <div>Written by Claude (Anthropic's Claude Code), working with gcysne.</div>
+      <div>Written by Claude (Anthropic's Claude Code), working with Gabriel Cysne.</div>
       <div style={h2}>Contributors</div>
       <div>Everyone who reports problems, tests on new devices and sends improvements.</div>
       <Focusable style={linkRow}>
