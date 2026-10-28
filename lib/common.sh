@@ -1,3 +1,4 @@
+# shellcheck shell=bash disable=SC2034  # sourced by the other scripts; variables are used there
 # Shared settings for the claude-deck scripts (sourced, not run).
 # User settings live in ~/.config/claude-deck/config (shell syntax, created by install.sh).
 CLAUDE_DECK_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/claude-deck/config"

@@ -4,8 +4,9 @@
 panel from the Steam status bar, drive with the controller and the touchscreen, and also reach from Desktop Mode
 and your phone.
 
-> **Alpha.** Built and tested on a Lenovo Legion Go with SteamOS 3.8. It should work on other SteamOS devices
-> (Steam Deck, Legion Go S, ROG Ally on SteamOS) but hasn't been tested there yet. Reports welcome.
+> **Alpha.** Built and tested on a Lenovo Legion Go with SteamOS 3.9.5 and Decky Loader 3.3.0. It should work on
+> other SteamOS devices (Steam Deck, Legion Go S, ROG Ally on SteamOS) but hasn't been tested there yet.
+> [Device reports](../../issues/new?template=device_report.md) welcome.
 >
 > claude-deck is a community project. It is **not affiliated with or endorsed by Anthropic** or Valve.
 > "Claude" and "Claude Code" are trademarks of Anthropic.
@@ -22,6 +23,8 @@ and your phone.
   and, optionally, on your phone or claude.ai via Claude Code Remote Control.
 - **Notifications**: a Steam toast when Claude needs your permission or input (desktop notification in Desktop Mode).
 - **Voice (optional, recommended)**: answers read aloud, offline, with Piper ([docs/voice.md](docs/voice.md)).
+- **About page**: the cog in the plugin's title bar (Quick Access > Claude Deck) shows the version, the controls and
+  the credits.
 
 ## Requirements
 
@@ -138,6 +141,14 @@ a separate one). `claude-session --help` lists the other commands.
 
 `decky-plugin/` is a standard Decky plugin (TypeScript + rollup, Python backend). `corepack pnpm install`,
 `corepack pnpm run build`, then `decky-plugin/install.sh`. Design notes: `docs/spikes/`, `docs/panel-backlog.md`.
+CI (`.github/workflows/build.yml`) lints the scripts, builds the plugin and attaches `claude-deck.zip` to tagged releases.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+
+## Credits
+
+Created by **[gcysne](https://github.com/gcysne)**, who had the idea, leads the project and tests every build.
+The code is written by Claude (Anthropic's Claude Code), working with gcysne. Licensed under the [MIT License](LICENSE);
+bundled third-party code: [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
 
 ## License
 

@@ -52,7 +52,7 @@ STAGE="$SRC/build/claude-deck"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/dist"
 cp plugin.json package.json main.py "$STAGE/"
-[[ -f "$SRC/../LICENSE" ]] && cp "$SRC/../LICENSE" "$STAGE/"
+for f in LICENSE THIRD_PARTY_NOTICES; do [[ -f "$SRC/../$f" ]] && cp "$SRC/../$f" "$STAGE/"; done
 cp dist/index.js "$STAGE/dist/"
 
 # Copy next to (not inside) the watched plugins folder, swap it in with one rename, then restart Decky:

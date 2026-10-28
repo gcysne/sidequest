@@ -29,6 +29,7 @@ Everything you can do in Game Mode, button by button. New here? Start with [Firs
 | To… | Do this |
 |---|---|
 | **Open the panel** | Select the **✳ icon** in the status bar (D-pad up to the bar, then <kbd>A</kbd>, or tap it). Or <kbd>…</kbd> Quick Access menu > **Claude Deck** > **Open Claude panel**. |
+| **About, controls, credits** | <kbd>…</kbd> Quick Access menu > **Claude Deck** > the **cog** in its title bar. |
 | **Close the panel** | <kbd>B</kbd>, or tap **B Close** in the panel's header. |
 | **Start Claude** (no session running) | <kbd>…</kbd> > **Claude Deck** > **Start Claude** (continues your last conversation) or **Start a new conversation**. The panel opens by itself. |
 | **New conversation** | <kbd>…</kbd> > **Claude Deck** > **New conversation**. Claude restarts empty. Your previous conversation stays available through `/resume`. Asks first, because it interrupts Claude. |
