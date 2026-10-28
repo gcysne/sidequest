@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove sidequest. Keeps your settings (~/.config/sidequest), your project folder, Claude Code itself
+# Remove Sidequest. Keeps your settings (~/.config/sidequest), your project folder and notebook, Claude Code itself
 # and your Claude login.
 #   ./uninstall.sh            remove scripts, service, hooks and the Decky plugin (asks for sudo)
 #   ./uninstall.sh --keep-plugin
@@ -17,6 +17,13 @@ for f in "$SRC"/bin/* claude-gamemode; do   # claude-gamemode: from older instal
     l="$HOME/.local/bin/$(basename "$f")"
     [[ -L "$l" && "$(readlink "$l")" == "$LIB"/* ]] && rm -f "$l"
 done
+for l in "$PROJECT_DIR"/.claude/skills/*; do             # skill links into the installed copy
+    [[ -L "$l" && "$(readlink "$l")" == "$LIB/skills/"* ]] && rm -f "$l"
+done
+if [[ -f "$PROJECT_DIR/CLAUDE.md" ]]; then                  # the agent import block; the rest of the file stays
+    sed -i '/<!-- sidequest:agent/,/<!-- \/sidequest:agent -->/d' "$PROJECT_DIR/CLAUDE.md"
+    [[ -s "$PROJECT_DIR/CLAUDE.md" ]] || rm -f "$PROJECT_DIR/CLAUDE.md"
+fi
 rm -rf "$LIB"
 rm -f "$HOME/.local/share/applications/claude-code.desktop"
 rm -rf "$SIDEQUEST_STATE/open-url" "$SIDEQUEST_STATE/toasts"
@@ -26,7 +33,7 @@ if [[ -f "$PROJECT_DIR/.claude/settings.json" ]]; then
 import json, sys
 from pathlib import Path
 p = Path(sys.argv[1]); cfg = json.loads(p.read_text())
-mine = ("/.local/bin/claude-tts", "/.local/bin/claude-notify")
+mine = ("/.local/bin/claude-tts", "/.local/bin/claude-notify", "/.local/bin/sidequest-update-check")
 for event in list(cfg.get("hooks", {})):
     groups = []
     for g in cfg["hooks"][event]:
@@ -45,4 +52,4 @@ if (( ! KEEP_PLUGIN )) && [[ -d "$HOME/homebrew/plugins/sidequest" || -d "$HOME/
     sudo ${SUDO_ASKPASS:+-A} -p "[sudo] password to remove the sidequest Decky plugin: " \
         sh -c 'rm -rf "$1" "$2" && { systemctl restart plugin_loader 2>/dev/null || true; }' _ "$HOME/homebrew/plugins/sidequest" "$HOME/homebrew/plugins/claude-deck"
 fi
-echo "Removed. Kept: ~/.config/sidequest, $PROJECT_DIR, Claude Code and your login."
+echo "Removed. Kept: ~/.config/sidequest, $PROJECT_DIR (with your notebook in notes/), Claude Code and your login."

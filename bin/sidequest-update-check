@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""SessionStart hook: tell the agent when a newer Sidequest release exists (checks GitHub at most once a day).
+
+Prints nothing when up to date or offline. Output becomes context for the session, so it is phrased for the agent.
+"""
+import json, os, re, time, urllib.request
+from pathlib import Path
+
+HOME = Path.home()
+VERSION_FILE = HOME / ".local/lib/sidequest/VERSION"
+STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "sidequest/update-check.json"
+REPO = "gcysne/sidequest"
+DAY = 86400
+
+
+def vtuple(v):
+    return tuple(int(x) for x in re.findall(r"\d+", v)[:3]) + ((0,) if "-" not in v else (-1,))
+
+
+def main():
+    try:
+        installed = VERSION_FILE.read_text().strip()
+    except OSError:
+        return
+    try:
+        cache = json.loads(STATE.read_text())
+    except (OSError, ValueError):
+        cache = {}
+    if time.time() - cache.get("checked", 0) > DAY:
+        try:
+            req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases?per_page=5",
+                                         headers={"Accept": "application/vnd.github+json", "User-Agent": "sidequest"})
+            rels = json.load(urllib.request.urlopen(req, timeout=5))
+            tags = [r["tag_name"].lstrip("v") for r in rels if not r.get("draft")]
+            cache = {"checked": time.time(), "latest": max(tags, key=vtuple) if tags else installed}
+            STATE.parent.mkdir(parents=True, exist_ok=True)
+            STATE.write_text(json.dumps(cache))
+        except Exception:
+            return
+    latest = cache.get("latest", installed)
+    if vtuple(latest) > vtuple(installed):
+        print(f"Sidequest update available: installed {installed}, latest {latest} "
+              f"(https://github.com/{REPO}/releases). Tell the user and ask whether to update now "
+              f"(sidequest-update skill). Don't update without a yes.")
+
+
+if __name__ == "__main__":
+    main()

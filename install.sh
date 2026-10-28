@@ -73,6 +73,8 @@ add_setting() { # KEY VALUE COMMENT
 }
 add_setting PANEL_WIDTH 70 "Game Mode panel width, percent of the screen (30-100). Applies the next time the panel opens."
 add_setting PANEL_FONT_SIZE 15 "Game Mode panel font size in pixels (8-40). Applies the next time the panel opens."
+sed -i '/^SIDEQUEST_SRC=/d' "$CONF"
+printf 'SIDEQUEST_SRC="%s"   # the git clone Sidequest was installed from (updates, contributions)\n' "$SRC" >> "$CONF"
 # shellcheck source=lib/common.sh
 . "$SRC/lib/common.sh"
 mkdir -p "$PROJECT_DIR"
@@ -92,11 +94,14 @@ else
     warn "Claude Code is not installed (--no-claude). The session won't start until it is."
 fi
 
-# 3. Scripts: copy to ~/.local/lib/sidequest, link into ~/.local/bin
-mkdir -p "$LIB/bin" "$LIB/lib" "$LIB/tmux" "$BIN"
-cp "$SRC"/bin/* "$LIB/bin/"
-cp "$SRC"/lib/*.sh "$LIB/lib/"
-cp "$SRC"/tmux/*.conf "$LIB/tmux/"
+# 3. Scripts and knowledge base: copy to ~/.local/lib/sidequest, link commands into ~/.local/bin
+mkdir -p "$LIB" "$BIN"
+for d in bin lib tmux agent skills devices os stacks ci; do
+    rm -rf "${LIB:?}/$d"
+    cp -r "$SRC/$d" "$LIB/$d"
+done
+find "$LIB" -name __pycache__ -prune -exec rm -rf {} +
+python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$SRC/decky-plugin/package.json" > "$LIB/VERSION"
 chmod +x "$LIB"/bin/*
 for f in "$SRC"/bin/*; do
     n="$(basename "$f")"
@@ -151,6 +156,31 @@ say "claude-session.service installed (if it was running: claude-session --stop 
 [[ -L "$BIN/claude-gamemode" ]] && rm -f "$BIN/claude-gamemode"
 rm -f "$LIB/bin/claude-gamemode" "$HOME/.local/share/applications/claude-code.desktop"
 
+# 5b. The companion agent: instructions, skills and notebook in the project folder
+mkdir -p "$PROJECT_DIR/.claude/skills" "$PROJECT_DIR/notes"
+for s in "$LIB"/skills/*/; do                      # skills: links into the installed copy
+    n="$(basename "$s")"; l="$PROJECT_DIR/.claude/skills/$n"
+    if [[ -e "$l" && ! -L "$l" ]]; then warn "skill $n: $l exists and isn't ours; left alone"; continue; fi
+    ln -sfn "$LIB/skills/$n" "$l"
+done
+for l in "$PROJECT_DIR"/.claude/skills/*; do      # skills removed in this version
+    [[ -L "$l" && "$(readlink "$l")" == "$LIB/skills/"* && ! -e "$l" ]] && rm -f "$l"
+done
+(cd "$SRC/agent/notes-template" && find . -type f) | while read -r f; do   # notebook: only missing files
+    [[ -e "$PROJECT_DIR/notes/$f" ]] || { mkdir -p "$(dirname "$PROJECT_DIR/notes/$f")"; cp "$SRC/agent/notes-template/$f" "$PROJECT_DIR/notes/$f"; }
+done
+CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
+if ! grep -q 'sidequest/agent/AGENT.md' "$CLAUDE_MD" 2>/dev/null; then
+    {
+        echo '<!-- sidequest:agent (added by Sidequest install.sh; your own rules go in CLAUDE.local.md or below) -->'
+        echo '@~/.local/lib/sidequest/agent/AGENT.md'
+        echo '<!-- /sidequest:agent -->'
+        if [[ -f "$CLAUDE_MD" ]]; then echo; cat "$CLAUDE_MD"; fi
+    } > "$CLAUDE_MD.new"
+    mv "$CLAUDE_MD.new" "$CLAUDE_MD"
+fi
+say "companion agent: $CLAUDE_MD, $(ls "$LIB/skills" | wc -l) skills in $PROJECT_DIR/.claude/skills, notebook in $PROJECT_DIR/notes"
+
 # 6. Claude Code hooks for the project: notifications, plus voice when Piper is installed
 mkdir -p "$PROJECT_DIR/.claude"
 VOICE=0; [[ -x "$BIN/piper" ]] && VOICE=1
@@ -159,7 +189,7 @@ import json, sys
 from pathlib import Path
 src, dst, home, voice = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3], sys.argv[4] == "1"
 ours = json.loads(src.read_text().replace("@HOME@", home))
-mine = ("/.local/bin/claude-tts", "/.local/bin/claude-notify")
+mine = ("/.local/bin/claude-tts", "/.local/bin/claude-notify", "/.local/bin/sidequest-update-check")
 if not voice:
     for groups in ours.values():
         for g in groups:
