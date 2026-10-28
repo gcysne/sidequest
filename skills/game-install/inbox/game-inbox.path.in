@@ -1,0 +1,9 @@
+[Unit]
+Description=Sidequest: watch the game inbox folder for new games
+
+[Path]
+PathChanged=@INBOX@
+Unit=game-inbox.service
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,8 @@
+[Unit]
+Description=Sidequest: install and tune new games dropped into the inbox (Claude Code headless)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/lib/sidequest/skills/game-install/inbox/game-inbox-run
+Nice=10
+IOSchedulingClass=idle
