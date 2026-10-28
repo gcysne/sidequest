@@ -1,6 +1,6 @@
 ---
 name: Device report
-about: Tell us how Claude Deck works on your device
+about: Tell us how Sidequest works on your device
 labels: device-report
 ---
 

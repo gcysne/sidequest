@@ -1,4 +1,4 @@
-# Using claude-deck
+# Using Sidequest
 
 Everything you can do in Game Mode, button by button. New here? Start with [First run](first-run.md).
 
@@ -28,12 +28,12 @@ Everything you can do in Game Mode, button by button. New here? Start with [Firs
 
 | To… | Do this |
 |---|---|
-| **Open the panel** | Select the **✳ icon** in the status bar (D-pad up to the bar, then <kbd>A</kbd>, or tap it). Or <kbd>…</kbd> Quick Access menu > **Claude Deck** > **Open Claude panel**. |
-| **About, controls, credits** | <kbd>…</kbd> Quick Access menu > **Claude Deck** > the **cog** in its title bar. |
+| **Open the panel** | Select the **✳ icon** in the status bar (D-pad up to the bar, then <kbd>A</kbd>, or tap it). Or <kbd>…</kbd> Quick Access menu > **Sidequest** > **Open Claude panel**. |
+| **About, controls, credits** | <kbd>…</kbd> Quick Access menu > **Sidequest** > the **cog** in its title bar. |
 | **Close the panel** | <kbd>B</kbd>, or tap **B Close** in the panel's header. |
-| **Start Claude** (no session running) | <kbd>…</kbd> > **Claude Deck** > **Start Claude** (continues your last conversation) or **Start a new conversation**. The panel opens by itself. |
-| **New conversation** | <kbd>…</kbd> > **Claude Deck** > **New conversation**. Claude restarts empty. Your previous conversation stays available through `/resume`. Asks first, because it interrupts Claude. |
-| **Stop Claude** | <kbd>…</kbd> > **Claude Deck** > **Stop session**. Asks first. **Start** later continues the last conversation. |
+| **Start Claude** (no session running) | <kbd>…</kbd> > **Sidequest** > **Start Claude** (continues your last conversation) or **Start a new conversation**. The panel opens by itself. |
+| **New conversation** | <kbd>…</kbd> > **Sidequest** > **New conversation**. Claude restarts empty. Your previous conversation stays available through `/resume`. Asks first, because it interrupts Claude. |
+| **Stop Claude** | <kbd>…</kbd> > **Sidequest** > **Stop session**. Asks first. **Start** later continues the last conversation. |
 
 The ✳ icon is only in the status bar while a session is running.
 
@@ -101,7 +101,7 @@ come back, then reopen the panel. Every link is also printed in the panel.
 
 ## Settings
 
-File: `~/.config/claude-deck/config` (plain text, shell syntax). The installer creates it and adds new settings on
+File: `~/.config/sidequest/config` (plain text, shell syntax). The installer creates it and adds new settings on
 updates without touching your values.
 
 | Setting | Default | What it does | Applies |
@@ -122,8 +122,8 @@ PANEL_FONT_SIZE=18
 
 | Problem | Try |
 |---|---|
-| No ✳ icon | Is a session running? <kbd>…</kbd> > **Claude Deck** shows the status and a **Start** button. The Quick Access menu entry still works if a Steam update breaks the icon. |
-| Panel says "Session detached or ended" | Claude exited. Close the panel, then <kbd>…</kbd> > **Claude Deck** > **Start Claude**. |
-| Claude Deck missing from the Quick Access menu | Decky Loader isn't running (SteamOS updates can remove it): reinstall Decky from decky.xyz in Desktop Mode, then re-run `./install.sh`. |
-| No toasts | `~/.local/state/claude-deck/notify.log` shows where each notification went. |
-| Anything else | Logs: `~/.local/state/claude-deck/`, and `journalctl -u plugin_loader` for the plugin. |
+| No ✳ icon | Is a session running? <kbd>…</kbd> > **Sidequest** shows the status and a **Start** button. The Quick Access menu entry still works if a Steam update breaks the icon. |
+| Panel says "Session detached or ended" | Claude exited. Close the panel, then <kbd>…</kbd> > **Sidequest** > **Start Claude**. |
+| Sidequest missing from the Quick Access menu | Decky Loader isn't running (SteamOS updates can remove it): reinstall Decky from decky.xyz in Desktop Mode, then re-run `./install.sh`. |
+| No toasts | `~/.local/state/sidequest/notify.log` shows where each notification went. |
+| Anything else | Logs: `~/.local/state/sidequest/`, and `journalctl -u plugin_loader` for the plugin. |

@@ -1,9 +1,9 @@
 [Unit]
-Description=Claude Code in tmux (claude-deck; survives Desktop/Game Mode switches)
+Description=Claude Code in tmux (sidequest; survives Desktop/Game Mode switches)
 
 [Service]
 Type=forking
 WorkingDirectory=%h
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/tmux -L claude new-session -d -s claude -x 200 -y 50 %h/.local/lib/claude-deck/bin/claude-session-inner
+ExecStart=/usr/bin/tmux -L claude new-session -d -s claude -x 200 -y 50 %h/.local/lib/sidequest/bin/claude-session-inner
 ExecStop=/usr/bin/tmux -L claude kill-server

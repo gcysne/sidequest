@@ -1,8 +1,8 @@
-"""Decky backend for claude-deck. Runs as the normal user (no "root" flag in plugin.json).
+"""Decky backend for sidequest. Runs as the normal user (no "root" flag in plugin.json).
 
 - session_status(): is the persistent Claude session (tmux socket "claude") running? Is Claude Code installed?
 - session_start(new) / session_new() / session_stop(): control the session from Game Mode (claude-session).
-- spools: claude-open-url and claude-notify drop files in ~/.local/state/claude-deck/{open-url,toasts}; the
+- spools: claude-open-url and claude-notify drop files in ~/.local/state/sidequest/{open-url,toasts}; the
   backend forwards them to the frontend ("open_url" opens Steam's browser, "toast" shows a Steam toast) and
   touches decky-alive so the scripts know the plugin is listening.
 - term_*(): a terminal bridge for the panel. term_open() attaches a *new* tmux client to the
@@ -34,14 +34,14 @@ except ImportError:
 
 TMUX_SOCKET = "claude"
 HOME = Path(decky.DECKY_USER_HOME)
-STATE = HOME / ".local/state/claude-deck"
+STATE = HOME / ".local/state/sidequest"
 URL_SPOOL = STATE / "open-url"
 TOAST_SPOOL = STATE / "toasts"
 ALIVE = STATE / "decky-alive"
 SESSION_CMD = str(HOME / ".local/bin/claude-session")
-PANEL_OPEN = Path(f"/run/user/{os.getuid()}/claude-deck/panel-open")  # claude-notify: skip "finished" toasts
+PANEL_OPEN = Path(f"/run/user/{os.getuid()}/sidequest/panel-open")  # claude-notify: skip "finished" toasts
 SPOOL_SECONDS = 0.5
-CONFIG = HOME / ".config/claude-deck/config"
+CONFIG = HOME / ".config/sidequest/config"
 # Panel settings in the config file: (default, min, max)
 PANEL_SETTINGS = {"PANEL_WIDTH": (70, 30, 100), "PANEL_FONT_SIZE": (15, 8, 40)}
 FLUSH_SECONDS = 0.015   # batch output into ~60 events/s at most
@@ -157,7 +157,7 @@ TERM = Terminal()
 
 
 def _read_panel_settings():
-    """PANEL_* values from ~/.config/claude-deck/config (shell syntax; only plain numbers are read)."""
+    """PANEL_* values from ~/.config/sidequest/config (shell syntax; only plain numbers are read)."""
     values = {k: d for k, (d, _, _) in PANEL_SETTINGS.items()}
     try:
         lines = CONFIG.read_text().splitlines()
@@ -292,11 +292,11 @@ class Plugin:
     async def _main(self):
         global SPOOL_TASK
         SPOOL_TASK = asyncio.get_running_loop().create_task(_spool_loop())
-        decky.logger.info("claude-deck backend started")
+        decky.logger.info("sidequest backend started")
 
     async def _unload(self):
         if SPOOL_TASK:
             SPOOL_TASK.cancel()
         ALIVE.unlink(missing_ok=True)
         TERM.close()
-        decky.logger.info("claude-deck backend stopped")
+        decky.logger.info("sidequest backend stopped")

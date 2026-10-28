@@ -37,20 +37,20 @@ jobs:
 
       - name: Package
         run: |
-          mkdir -p out/claude-deck/dist
-          cp decky-plugin/plugin.json decky-plugin/package.json decky-plugin/main.py LICENSE THIRD_PARTY_NOTICES README.md out/claude-deck/
-          cp decky-plugin/dist/index.js out/claude-deck/dist/
-          (cd out && zip -qr claude-deck.zip claude-deck)
-          sha256sum out/claude-deck.zip
+          mkdir -p out/sidequest/dist
+          cp decky-plugin/plugin.json decky-plugin/package.json decky-plugin/main.py LICENSE THIRD_PARTY_NOTICES README.md out/sidequest/
+          cp decky-plugin/dist/index.js out/sidequest/dist/
+          (cd out && zip -qr sidequest.zip sidequest)
+          sha256sum out/sidequest.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: claude-deck
-          path: out/claude-deck.zip
+          name: sidequest
+          path: out/sidequest.zip
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: out/claude-deck.zip
+          files: out/sidequest.zip
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}

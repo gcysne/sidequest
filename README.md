@@ -1,4 +1,4 @@
-# claude-deck
+# Sidequest for Claude Code
 
 **Claude Code on SteamOS handhelds, in Game Mode.** One persistent Claude Code session that you open as a side
 panel from the Steam status bar, drive with the controller and the touchscreen, and also reach from Desktop Mode
@@ -8,7 +8,7 @@ and your phone.
 > other SteamOS devices (Steam Deck, Legion Go S, ROG Ally on SteamOS) but hasn't been tested there yet.
 > [Device reports](../../issues/new?template=device_report.md) welcome.
 >
-> claude-deck is a community project. It is **not affiliated with or endorsed by Anthropic** or Valve.
+> Sidequest is a community project. It is **not affiliated with or endorsed by Anthropic** or Valve.
 > "Claude" and "Claude Code" are trademarks of Anthropic.
 
 ## What you get
@@ -17,13 +17,13 @@ and your phone.
   Loader plugin). B closes it; Claude keeps working.
 - **Controller-first input**: Y opens Steam's keyboard straight into Claude's prompt, the D-pad navigates Claude's
   menus, touch-drag scrolls. Full mapping below.
-- **Start / new conversation / stop** from the Quick Access menu (… button > Claude Deck).
+- **Start / new conversation / stop** from the Quick Access menu (… button > Sidequest).
 - **Login from Game Mode**: Claude's sign-in page opens in Steam's built-in browser; no Desktop Mode needed.
 - **One session everywhere**: the same conversation in Game Mode, in a Desktop Mode terminal (`claude-session`),
   and, optionally, on your phone or claude.ai via Claude Code Remote Control.
 - **Notifications**: a Steam toast when Claude needs your permission or input (desktop notification in Desktop Mode).
 - **Voice (optional, recommended)**: answers read aloud, offline, with Piper ([docs/voice.md](docs/voice.md)).
-- **About page**: the cog in the plugin's title bar (Quick Access > Claude Deck) shows the version, the controls and
+- **About page**: the cog in the plugin's title bar (Quick Access > Sidequest) shows the version, the controls and
   the credits.
 
 ## Requirements
@@ -34,15 +34,15 @@ and your phone.
   [usage terms](https://www.anthropic.com/legal) apply.
 - Installed for you if missing: [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) (official
   installer) and, only to build the plugin, Node.js (official build from nodejs.org, checksum-verified, kept in
-  `~/.cache/claude-deck/node`). `tmux`, `python3` and `curl` ship with SteamOS.
+  `~/.cache/sidequest/node`). `tmux`, `python3` and `curl` ship with SteamOS.
 
 ## Install
 
 In **Desktop Mode**, open Konsole:
 
 ```bash
-git clone https://github.com/gcysne/claude-deck.git
-cd claude-deck
+git clone https://github.com/gcysne/sidequest.git
+cd sidequest
 ./install.sh
 ```
 
@@ -60,7 +60,7 @@ Options: `--voice` / `--no-voice` (answer the voice question up front), `--no-pl
 
 > **Full guide with every button, gesture and setting: [docs/usage.md](docs/usage.md).**
 
-**Open** the panel with the **✳ icon** in Steam's status bar, or <kbd>…</kbd> Quick Access menu > **Claude Deck**.
+**Open** the panel with the **✳ icon** in Steam's status bar, or <kbd>…</kbd> Quick Access menu > **Sidequest**.
 **Close** it with <kbd>B</kbd>: Claude keeps working and sends a Steam toast when it needs you.
 
 | Button | In the panel |
@@ -77,7 +77,7 @@ Options: `--voice` / `--no-voice` (answer the voice question up front), `--no-pl
 | <kbd>⧉</kbd> View | **Tab**: autocomplete |
 | Touchscreen | **drag** to scroll, **tap** to click |
 
-**Quick Access menu > Claude Deck:** **Start Claude** (continue) · **Start a new conversation** ·
+**Quick Access menu > Sidequest:** **Start Claude** (continue) · **Start a new conversation** ·
 **New conversation** · **Stop session** · **Open Claude panel**.
 
 **Desktop Mode:** run `claude-session` in a terminal to join the same session (not plain `claude`, which would start
@@ -85,7 +85,7 @@ a separate one). `claude-session --help` lists the other commands.
 
 ### Settings
 
-`~/.config/claude-deck/config`:
+`~/.config/sidequest/config`:
 
 | Setting | Default | |
 |---|---|---|
@@ -99,7 +99,7 @@ a separate one). `claude-session --help` lists the other commands.
 ```
  Game Mode (Steam UI)                         your home folder
  ┌────────────────────────────┐   pty bridge  ┌──────────────────────────────────────────┐
- │ Decky plugin "Claude Deck" │◄────────────► │ tmux -L claude  (claude-session.service)  │
+ │ Decky plugin "Sidequest" │◄────────────► │ tmux -L claude  (claude-session.service)  │
  │  status-bar icon, panel,   │               │   └─ claude (Claude Code) in PROJECT_DIR │
  │  xterm.js terminal         │◄── spool ──── │ claude-open-url / claude-notify (hooks)  │
  └────────────────────────────┘               └──────────────────────────────────────────┘
@@ -111,16 +111,16 @@ a separate one). `claude-session --help` lists the other commands.
 - The panel attaches a new tmux client inside a pseudo-terminal in the plugin's Python backend and streams it to
   xterm.js. Closing the panel only detaches.
 - Claude's browser requests (`BROWSER=claude-open-url`) and notification hooks drop small files in
-  `~/.local/state/claude-deck/`. The plugin turns them into Steam's browser and Steam toasts.
+  `~/.local/state/sidequest/`. The plugin turns them into Steam's browser and Steam toasts.
 
 | Installed piece | Where |
 |---|---|
-| Scripts (`claude-session`, `claude-open-url`, `claude-notify`, `claude-tts`) | `~/.local/lib/claude-deck`, linked in `~/.local/bin` |
+| Scripts (`claude-session`, `claude-open-url`, `claude-notify`, `claude-tts`) | `~/.local/lib/sidequest`, linked in `~/.local/bin` |
 | Session service | `~/.config/systemd/user/claude-session.service` |
-| Settings | `~/.config/claude-deck/` |
+| Settings | `~/.config/sidequest/` |
 | Claude Code hooks (notifications, voice) | `<project folder>/.claude/settings.json` (merged; your hooks are kept) |
-| Decky plugin | `~/homebrew/plugins/claude-deck` |
-| Logs | `~/.local/state/claude-deck/*.log`, Decky: `journalctl -u plugin_loader` |
+| Decky plugin | `~/homebrew/plugins/sidequest` |
+| Logs | `~/.local/state/sidequest/*.log`, Decky: `journalctl -u plugin_loader` |
 
 ## Optional extras
 
@@ -141,7 +141,7 @@ a separate one). `claude-session --help` lists the other commands.
 
 `decky-plugin/` is a standard Decky plugin (TypeScript + rollup, Python backend). `corepack pnpm install`,
 `corepack pnpm run build`, then `decky-plugin/install.sh`. Design notes: `docs/spikes/`, `docs/panel-backlog.md`.
-CI (`.github/workflows/build.yml`) lints the scripts, builds the plugin and attaches `claude-deck.zip` to tagged releases.
+CI (`.github/workflows/build.yml`) lints the scripts, builds the plugin and attaches `sidequest.zip` to tagged releases.
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Credits

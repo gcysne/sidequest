@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Build the Decky plugin and copy it to ~/homebrew/plugins/claude-deck.
+# Build the Decky plugin and copy it to ~/homebrew/plugins/sidequest.
 # Needs Decky Loader. Node.js >= 20 is used from PATH; if missing, the official Node.js LTS build is downloaded
-# once (checksum verified) into ~/.cache/claude-deck/node. Only the final copy runs as root (Decky owns the folder).
+# once (checksum verified) into ~/.cache/sidequest/node. Only the final copy runs as root (Decky owns the folder).
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
 PLUGINS="$HOME/homebrew/plugins"
-DEST="$PLUGINS/claude-deck"
-NODE_CACHE="$HOME/.cache/claude-deck/node"
+DEST="$PLUGINS/sidequest"
+NODE_CACHE="$HOME/.cache/sidequest/node"
 
 say() { printf '\033[1m- %s\033[0m\n' "$*"; }
 [[ -d "$PLUGINS" ]] || { echo "Decky Loader not found ($PLUGINS missing); skipping plugin." >&2; exit 0; }
@@ -48,7 +48,7 @@ corepack pnpm run --silent typecheck
 corepack pnpm run --silent build >/dev/null
 
 # Stage the plugin, then copy it into place.
-STAGE="$SRC/build/claude-deck"
+STAGE="$SRC/build/sidequest"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/dist"
 cp plugin.json package.json main.py "$STAGE/"
@@ -57,13 +57,14 @@ cp dist/index.js "$STAGE/dist/"
 
 # Copy next to (not inside) the watched plugins folder, swap it in with one rename, then restart Decky:
 # its hot reload trips over half-copied folders.
-TMP="$HOME/homebrew/.claude-deck.tmp"
-COPY=(sh -c 'rm -rf "$3" && cp -r "$2" "$3" && rm -rf "$1" && mv "$3" "$1" && { systemctl restart plugin_loader 2>/dev/null || true; }' _ "$DEST" "$STAGE" "$TMP")
+TMP="$HOME/homebrew/.sidequest.tmp"
+# $4: the plugin's folder from versions called claude-deck, removed in the same step.
+COPY=(sh -c 'rm -rf "$3" && cp -r "$2" "$3" && rm -rf "$1" "$4" && mv "$3" "$1" && { systemctl restart plugin_loader 2>/dev/null || true; }' _ "$DEST" "$STAGE" "$TMP" "$PLUGINS/claude-deck")
 if [[ -w "$PLUGINS" ]]; then
     "${COPY[@]}"
 elif [[ -t 0 || -n "${SUDO_ASKPASS:-}" ]]; then
     say "copying the plugin into $PLUGINS and restarting Decky needs your password (Decky owns that folder)"
-    sudo ${SUDO_ASKPASS:+-A} -p "[sudo] password to install the claude-deck Decky plugin: " "${COPY[@]}"
+    sudo ${SUDO_ASKPASS:+-A} -p "[sudo] password to install the Sidequest Decky plugin: " "${COPY[@]}"
 else
     echo "Built and staged at $STAGE. To install, run decky-plugin/install.sh in a terminal (asks for sudo)." >&2
     exit 2

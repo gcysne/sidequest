@@ -7,21 +7,21 @@ import { DEFAULT_SETTINGS, Settings, getState, setState, subscribe } from "./sto
 import { ClaudeTerminal } from "./terminal";
 
 const getSettings = callable<[], Settings>("get_settings");
-const CSS_ID = "claude-deck-panel-css";
+const CSS_ID = "sidequest-panel-css";
 // Steam's gamepad UI keeps a 40px status bar on top and a 42px button-hint footer at the bottom;
 // the panel sits between them so neither hides the header or the input row.
 const TOP = "40px";
 const BOTTOM = "42px";
 const css = (width: number) => `
-.claude-deck-modal { position: fixed !important; top: ${TOP} !important; right: 0 !important; bottom: ${BOTTOM} !important;
+.sidequest-modal { position: fixed !important; top: ${TOP} !important; right: 0 !important; bottom: ${BOTTOM} !important;
   left: auto !important; width: ${width}vw !important; max-width: none !important; height: auto !important;
   max-height: none !important; margin: 0 !important; border-radius: 0 !important; padding: 0 !important;
   background: #1a2029 !important; box-shadow: -12px 0 40px rgba(0,0,0,0.8) !important; display: flex !important;
   flex-direction: column !important; transform: none !important; z-index: 10000 !important; }
-.claude-deck-modal > div { flex: 1; display: flex; flex-direction: column; padding: 0 !important; margin: 0 !important; max-height: none !important; }
-.claude-deck-modal .DialogContent, .claude-deck-modal .DialogContent_InnerWidth {
+.sidequest-modal > div { flex: 1; display: flex; flex-direction: column; padding: 0 !important; margin: 0 !important; max-height: none !important; }
+.sidequest-modal .DialogContent, .sidequest-modal .DialogContent_InnerWidth {
   width: 100% !important; max-width: none !important; flex: 1 1 auto !important; height: 100% !important; padding: 0 !important; margin: 0 !important; }
-.claude-deck-modal form, .claude-deck-modal form > div { height: 100%; }
+.sidequest-modal form, .sidequest-modal form > div { height: 100%; }
 `;
 
 let handle: { Close: () => void } | null = null;
@@ -82,7 +82,7 @@ export async function openClaudePanel() {
   // Reset our state ourselves: Steam does not always call fnOnClose (e.g. when B/Esc closes it).
   const close = () => { const h = handle; markClosed(); h?.Close(); };
   handle = showModal(
-    <ModalRoot modalClassName="claude-deck-modal" bAllowFullSize bHideCloseIcon onCancel={close} closeModal={close} onEscKeypress={close}>
+    <ModalRoot modalClassName="sidequest-modal" bAllowFullSize bHideCloseIcon onCancel={close} closeModal={close} onEscKeypress={close}>
       <PanelBody close={close} />
     </ModalRoot>,
     win,

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Runs inside the tmux session started by claude-session.service.
-. "$HOME/.local/lib/claude-deck/lib/common.sh"
+. "$HOME/.local/lib/sidequest/lib/common.sh"
 mkdir -p "$PROJECT_DIR" && cd "$PROJECT_DIR" || exit 1
 # Login and other links: open in Steam's browser in Game Mode, the desktop browser otherwise.
 export BROWSER="$HOME/.local/bin/claude-open-url"
 
 if ! command -v claude >/dev/null; then
-    echo "Claude Code is not installed. Run claude-deck's install.sh in Desktop Mode."
+    echo "Claude Code is not installed. Run Sidequest's install.sh in Desktop Mode."
     echo "Press Enter to close."; read -r _; exit 1
 fi
 args=()

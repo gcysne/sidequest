@@ -27,7 +27,7 @@ async function run(action: () => Promise<Result>, then?: () => void) {
   setState({ busy: true });
   try {
     const r = await action();
-    if (!r.ok) toaster.toast({ title: "Claude Deck", body: r.error ?? "Failed" });
+    if (!r.ok) toaster.toast({ title: "Sidequest", body: r.error ?? "Failed" });
     await poll();
     if (r.ok) then?.();
   } finally {
@@ -54,8 +54,8 @@ function QamContent({ iconOk }: { iconOk: boolean }) {
       <PanelSection>
         <PanelSectionRow>
           <div>
-            {!s.scriptsInstalled ? "claude-deck isn't fully installed." : "Claude Code isn't installed."} In Desktop
-            Mode, run <code>install.sh</code> from the claude-deck folder.
+            {!s.scriptsInstalled ? "Sidequest isn't fully installed." : "Claude Code isn't installed."} In Desktop
+            Mode, run <code>install.sh</code> from the Sidequest folder.
           </div>
         </PanelSectionRow>
       </PanelSection>
@@ -130,10 +130,10 @@ export default definePlugin(() => {
   addEventListener<[any]>("toast", onToast);
   routerHook.addRoute(ABOUT_ROUTE, () => <AboutRouter />, { exact: true });
   let iconOk = false;
-  try { iconOk = patchStatusBar(); } catch (e) { console.error("[claude-deck] patch failed", e); }
+  try { iconOk = patchStatusBar(); } catch (e) { console.error("[sidequest] patch failed", e); }
 
   return {
-    name: "Claude Deck",
+    name: "Sidequest",
     titleView: <TitleView />,
     content: <QamContent iconOk={iconOk} />,
     icon: <span style={{ fontWeight: 700 }}>{"✳"}</span>,

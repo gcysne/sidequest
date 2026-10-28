@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { getState, openPanel, subscribe } from "./store";
 
 const MARKER = "quickAccessHeader";
-const TAG = "[claude-deck]";
+const TAG = "[sidequest]";
 
 type Memo = { $$typeof: symbol; type: (props: any) => any };
 let patched: { memo: Memo; orig: (props: any) => any; wrapper: (props: any) => any } | null = null;
@@ -37,7 +37,7 @@ function ClaudeIcon() {
   return (
     <Focusable
       ref={ref as any}
-      className={`claude-deck-icon ${extra}`}
+      className={`sidequest-icon ${extra}`}
       onActivate={() => openPanel()}
       onClick={() => openPanel()}
       style={{ display: "flex", alignItems: "center", justifyContent: "center",
@@ -51,7 +51,7 @@ function ClaudeIcon() {
 
 function findHeaderMemo(): Memo | null {
   let req: any;
-  (window as any).webpackChunksteamui.push([[Symbol("claude-deck")], {}, (r: any) => { req = r; }]);
+  (window as any).webpackChunksteamui.push([[Symbol("sidequest")], {}, (r: any) => { req = r; }]);
   const hits: Memo[] = [];
   for (const id of Object.keys(req.m)) {
     let mod: any;
@@ -98,7 +98,7 @@ export function patchStatusBar(): boolean {
         const arr = ret?.props?.children?.props?.children;
         if (Array.isArray(arr)) {
           const grp = [...arr].reverse().find((x: any) => x?.type === React.Fragment && Array.isArray(x.props?.children));
-          if (grp) grp.props.children = [<ClaudeIcon key="claude-deck-icon" />, ...grp.props.children];
+          if (grp) grp.props.children = [<ClaudeIcon key="sidequest-icon" />, ...grp.props.children];
         }
       }
     } catch (e) { console.error(TAG, "status bar inject failed", e); }

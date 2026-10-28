@@ -1,5 +1,5 @@
 // Tiny shared state: is the panel open, is the Claude session running, is everything installed.
-// Panel settings come from ~/.config/claude-deck/config (PANEL_WIDTH, PANEL_FONT_SIZE), read on every open.
+// Panel settings come from ~/.config/sidequest/config (PANEL_WIDTH, PANEL_FONT_SIZE), read on every open.
 export type Settings = { panel_width: number; font_size: number };
 export const DEFAULT_SETTINGS: Settings = { panel_width: 70, font_size: 15 };
 type State = { panelOpen: boolean; running: boolean; claudeInstalled: boolean; scriptsInstalled: boolean; busy: boolean;

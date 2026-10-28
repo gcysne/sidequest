@@ -1,6 +1,6 @@
 # Voice: Claude reads its answers aloud
 
-**Optional, recommended.** When Claude finishes an answer, claude-deck reads the start of it aloud. You can follow
+**Optional, recommended.** When Claude finishes an answer, Sidequest reads the start of it aloud. You can follow
 what Claude is doing without reading the screen: with the panel closed, while something else is on screen, or from
 across the room.
 
@@ -26,7 +26,7 @@ Text-to-speech (recommended)
 Or any time later:
 
 ```bash
-./install.sh --voice           # from the claude-deck folder, Desktop Mode
+./install.sh --voice           # from the sidequest folder, Desktop Mode
 ```
 
 It installs into your home folder, with no sudo, about 150 MB:

@@ -3,8 +3,8 @@ import { DialogButton, Focusable, Navigation, SidebarNavigation, staticClasses }
 import { callable } from "@decky/api";
 import { useEffect, useState } from "react";
 
-export const ABOUT_ROUTE = "/claude-deck/about";
-const REPO = "https://github.com/gcysne/claude-deck";
+export const ABOUT_ROUTE = "/sidequest/about";
+const REPO = "https://github.com/gcysne/sidequest";
 const pluginInfo = callable<[], { version: string }>("plugin_info");
 
 function openUrl(url: string) {
@@ -27,7 +27,7 @@ export function TitleView() {
   return (
     <Focusable className={staticClasses.Title}
       style={{ display: "flex", alignItems: "center", width: "100%", padding: 0, boxShadow: "none" }}>
-      <div style={{ marginRight: "auto" }}>Claude Deck</div>
+      <div style={{ marginRight: "auto" }}>Sidequest</div>
       <DialogButton style={{ height: 28, width: 40, minWidth: 0, padding: "6px 12px", display: "flex",
         alignItems: "center", justifyContent: "center" }} onClick={openAbout}>
         {cogIcon}
@@ -46,7 +46,8 @@ function AboutPage() {
   useEffect(() => { pluginInfo().then((r) => setVersion(r.version)).catch(() => {}); }, []);
   return (
     <div>
-      <div style={{ fontSize: "1.8em", fontWeight: "bold" }}>✳ Claude Deck</div>
+      <div style={{ fontSize: "1.8em", fontWeight: "bold" }}>✳ Sidequest</div>
+      <div style={{ fontSize: "1.1em" }}>for Claude Code</div>
       <div style={muted}>{version ? `Version ${version} (alpha)` : "Alpha"}</div>
       <p>
         Claude Code on SteamOS handhelds, in Game Mode. One persistent Claude Code session that you open as a side
@@ -62,7 +63,7 @@ function AboutPage() {
       <div>Open source under the MIT License.</div>
       <div style={h2}>Disclaimer</div>
       <div style={muted}>
-        Claude Deck is a community project. It is not affiliated with or endorsed by Anthropic or Valve. "Claude"
+        Sidequest is a community project. It is not affiliated with or endorsed by Anthropic or Valve. "Claude"
         and "Claude Code" are trademarks of Anthropic. Using Claude Code requires a Claude account and is subject to
         Anthropic's terms.
       </div>
@@ -99,7 +100,7 @@ function ControlsPage() {
         </tbody>
       </table>
       <p style={muted}>
-        Open the panel with the ✳ icon in the status bar or from Quick Access &gt; Claude Deck. In Desktop Mode,
+        Open the panel with the ✳ icon in the status bar or from Quick Access &gt; Sidequest. In Desktop Mode,
         run <code>claude-session</code> in a terminal to join the same session.
       </p>
     </div>
@@ -133,7 +134,7 @@ function CreditsPage() {
 
 export function AboutRouter() {
   return (
-    <SidebarNavigation title="Claude Deck" showTitle pages={[
+    <SidebarNavigation title="Sidequest" showTitle pages={[
       { title: "About", content: <AboutPage /> },
       { title: "Controls", content: <ControlsPage /> },
       { title: "Credits", content: <CreditsPage /> },

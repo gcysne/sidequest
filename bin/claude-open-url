@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # BROWSER for the Claude session (login and other links).
-# Desktop Mode: the desktop's default browser. Game Mode: hand the URL to the claude-deck Decky plugin,
+# Desktop Mode: the desktop's default browser. Game Mode: hand the URL to the sidequest Decky plugin,
 # which opens it in Steam's built-in browser. Claude Code also prints every URL it opens.
 url="${1:?usage: claude-open-url URL}"
 if pgrep -u "$(id -u)" -x plasmashell >/dev/null 2>&1; then
     export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" DISPLAY="${DISPLAY:-:0}"
     exec xdg-open "$url"
 fi
-spool="${XDG_STATE_HOME:-$HOME/.local/state}/claude-deck/open-url"
+spool="${XDG_STATE_HOME:-$HOME/.local/state}/sidequest/open-url"
 mkdir -p "$spool"
 tmp="$spool/.$$.tmp"
 printf '%s' "$url" > "$tmp" && mv "$tmp" "$spool/$(date +%s%N).url"   # the plugin only reads *.url

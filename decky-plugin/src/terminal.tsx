@@ -45,9 +45,9 @@ function trace(kind: string, evt: any) {
 }
 
 function injectCss(doc: Document) {
-  if (doc.getElementById("claude-deck-xterm-css")) return;
+  if (doc.getElementById("sidequest-xterm-css")) return;
   const s = doc.createElement("style");
-  s.id = "claude-deck-xterm-css";
+  s.id = "sidequest-xterm-css";
   s.textContent = xtermCss;
   doc.head.appendChild(s);
 }
@@ -86,7 +86,7 @@ export function ClaudeTerminal() {
     if (!ta) return;
     ta.focus();
     try { keyboardManager(ta.ownerDocument)?.CreateVirtualKeyboardRef({})?.ShowVirtualKeyboard(); }
-    catch (e) { console.warn("claude-deck: could not open the keyboard", e); }
+    catch (e) { console.warn("sidequest: could not open the keyboard", e); }
   };
 
   // Steam delivers gamepad input as DOM events (vgp_onoptions, ...); catch Y in the capture phase so nothing

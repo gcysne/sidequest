@@ -3,21 +3,21 @@
 
 Reads the hook JSON on stdin (Notification or Stop event).
   Notification (permission request, waiting for input) -> always shown
-  Stop (answer finished) -> shown only in Game Mode when the claude-deck panel
+  Stop (answer finished) -> shown only in Game Mode when the sidequest panel
                             is closed (otherwise you're looking at the answer)
 
 Desktop Mode: desktop notification (notify-send).
-Game Mode:    Steam toast, through the claude-deck Decky plugin's spool
-              (~/.local/state/claude-deck/toasts/*.json), when the plugin is running.
+Game Mode:    Steam toast, through the sidequest Decky plugin's spool
+              (~/.local/state/sidequest/toasts/*.json), when the plugin is running.
 """
 import json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
 # (toast spool, heartbeat file touched by the plugin while it runs)
-SPOOLS = [(STATE / "claude-deck/toasts", STATE / "claude-deck/decky-alive")]
-RUN = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "claude-deck"
-LOG = STATE / "claude-deck/notify.log"
+SPOOLS = [(STATE / "sidequest/toasts", STATE / "sidequest/decky-alive")]
+RUN = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "sidequest"
+LOG = STATE / "sidequest/notify.log"
 
 
 def desktop_mode():

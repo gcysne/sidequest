@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install text-to-speech for claude-deck: Claude's answers read aloud with Piper (offline, on this device).
+# Install text-to-speech for Sidequest: Claude's answers read aloud with Piper (offline, on this device).
 # Everything goes into your home folder; no sudo. Safe to re-run: finished steps are skipped.
 #
 #   1. uv        Python package/tool manager (official release from GitHub, checksum-verified) -> ~/.local/bin

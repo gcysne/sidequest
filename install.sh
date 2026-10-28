@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install or update claude-deck. Safe to re-run. Run it in Desktop Mode, from a terminal (Konsole).
+# Install or update sidequest. Safe to re-run. Run it in Desktop Mode, from a terminal (Konsole).
 #
 #   ./install.sh                  install/update everything
 #   ./install.sh --no-plugin      skip the Decky plugin (Game Mode panel)
@@ -11,9 +11,9 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
-LIB="$HOME/.local/lib/claude-deck"
+LIB="$HOME/.local/lib/sidequest"
 BIN="$HOME/.local/bin"
-CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude-deck"
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/sidequest"
 CONF="$CONF_DIR/config"
 PLUGIN=1 CLAUDE=1 VOICE_CHOICE=ask
 for a in "$@"; do
@@ -37,11 +37,21 @@ for c in tmux python3 curl systemctl; do
 done
 systemctl --user show-environment >/dev/null 2>&1 || die "No systemd user session found (systemctl --user)."
 
+# 0b. Older versions were called claude-deck: move their settings and state, drop their scripts folder
+OLD_CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude-deck"
+OLD_STATE="${XDG_STATE_HOME:-$HOME/.local/state}/claude-deck"
+NEW_STATE="${XDG_STATE_HOME:-$HOME/.local/state}/sidequest"
+if [[ -d "$OLD_CONF_DIR" && ! -e "$CONF_DIR" ]]; then
+    mv "$OLD_CONF_DIR" "$CONF_DIR" && say "settings moved from $OLD_CONF_DIR to $CONF_DIR"
+fi
+[[ -d "$OLD_STATE" && ! -e "$NEW_STATE" ]] && mv "$OLD_STATE" "$NEW_STATE"
+rm -rf "$HOME/.local/lib/claude-deck" "$HOME/.cache/claude-deck"
+
 # 1. Settings (created once; yours to edit)
 mkdir -p "$CONF_DIR"
 if [[ ! -f "$CONF" ]]; then
     cat > "$CONF" <<EOF
-# claude-deck settings (shell syntax). Session settings apply after Stop + Start (Quick Access menu > Claude Deck);
+# sidequest settings (shell syntax). Session settings apply after Stop + Start (Quick Access menu > Sidequest);
 # panel settings apply the next time the panel opens.
 
 # Folder the persistent Claude Code session works in (its project). Created if missing.
@@ -82,7 +92,7 @@ else
     warn "Claude Code is not installed (--no-claude). The session won't start until it is."
 fi
 
-# 3. Scripts: copy to ~/.local/lib/claude-deck, link into ~/.local/bin
+# 3. Scripts: copy to ~/.local/lib/sidequest, link into ~/.local/bin
 mkdir -p "$LIB/bin" "$LIB/lib" "$LIB/tmux" "$BIN"
 cp "$SRC"/bin/* "$LIB/bin/"
 cp "$SRC"/lib/*.sh "$LIB/lib/"
@@ -118,7 +128,7 @@ else
         fi
     fi
     if [[ "$VOICE_CHOICE" == yes ]]; then
-        "$SRC/voice/install-voice.sh" || warn "text-to-speech install failed; the rest of claude-deck works without it"
+        "$SRC/voice/install-voice.sh" || warn "text-to-speech install failed; the rest of sidequest works without it"
     else
         say "text-to-speech skipped. Add it later: ./install.sh --voice (see docs/voice.md)"
     fi
@@ -161,7 +171,7 @@ except FileNotFoundError:
 hooks = cfg.setdefault("hooks", {})
 for event, groups in ours.items():
     kept = []
-    for g in hooks.get(event, []):          # drop earlier claude-deck entries, keep everything else
+    for g in hooks.get(event, []):          # drop earlier sidequest entries, keep everything else
         g["hooks"] = [h for h in g.get("hooks", []) if not str(h.get("command", "")).endswith(mine)]
         if g["hooks"]:
             kept.append(g)
@@ -182,5 +192,5 @@ fi
 
 echo
 say "Done. Next:"
-echo "  * First run (login): see docs/first-run.md. In Game Mode: Quick Access menu (…) > Claude Deck > Start."
+echo "  * First run (login): see docs/first-run.md. In Game Mode: Quick Access menu (…) > Sidequest > Start."
 echo "  * Desktop Mode: run 'claude-session' in a terminal to join the same session."

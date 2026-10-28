@@ -23,7 +23,7 @@ ensure() {
     # Size the window to whichever client was used last, and let touch/trackpad scrolling go through tmux.
     "${T[@]}" set -g window-size latest
     "${T[@]}" set -g mouse on
-    local conf="$HOME/.local/lib/claude-deck/tmux/touch-scroll.conf"
+    local conf="$HOME/.local/lib/sidequest/tmux/touch-scroll.conf"
     [[ -f "$conf" ]] && "${T[@]}" source-file "$conf"
     return 0
 }

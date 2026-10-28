@@ -1,20 +1,20 @@
 # Contributing
 
-Thanks for helping. Claude Deck is an alpha, so reports from new devices are the most useful contribution.
+Thanks for helping. Sidequest is an alpha, so reports from new devices are the most useful contribution.
 
 ## Reporting a problem
 
 Open an issue with: device (e.g. Steam Deck OLED), SteamOS version and channel (Settings > System), Decky Loader
 version, what you did and what happened. Logs help:
 
-- `~/.local/state/claude-deck/*.log`
-- Decky: `journalctl -u plugin_loader -b` and `~/homebrew/logs/claude-deck/`
+- `~/.local/state/sidequest/*.log`
+- Decky: `journalctl -u plugin_loader -b` and `~/homebrew/logs/sidequest/`
 - Session service: `journalctl --user -u claude-session -b`
 
 ## Changing code
 
 - Keep it **device-agnostic**: no hard-coded model, resolution or button names. Device-specific values go in
-  `~/.config/claude-deck/config`.
+  `~/.config/sidequest/config`.
 - Keep everything in the user's home folder. Only the plugin copy into `~/homebrew/plugins` uses sudo.
 - Plugin: `cd decky-plugin && corepack pnpm install && corepack pnpm run typecheck && corepack pnpm run build`,
   then `./install.sh` (Desktop Mode).
