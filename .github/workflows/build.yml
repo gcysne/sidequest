@@ -18,7 +18,7 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-          shellcheck -S warning install.sh uninstall.sh lib/*.sh voice/install-voice.sh decky-plugin/install.sh \
+          shellcheck -S warning get.sh install.sh uninstall.sh lib/*.sh voice/install-voice.sh decky-plugin/install.sh \
             bin/claude-session bin/claude-session-inner bin/claude-open-url \
             $(grep -rlE '^#!/usr/bin/env bash|^#!/bin/bash' skills devices os stacks lib)
 
