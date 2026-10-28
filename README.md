@@ -26,6 +26,26 @@ and your phone.
 - **About page**: the cog in the plugin's title bar (Quick Access > Sidequest) shows the version, the controls and
   the credits.
 
+## The companion agent
+
+Sidequest isn't only a terminal: the Claude session it runs is set up as a **companion for your handheld**.
+
+- **Roles:** install games (Steam, emulated, native ports), debug launches and controllers, profile and benchmark,
+  optimize settings and power for your exact device, check everything after SteamOS updates.
+- **Notebook:** it keeps `notes/` in the session folder: a hardware profile it discovers itself, a changelog of every
+  change it makes (with how to undo it), what's in progress, and one page per game. New sessions read it first.
+- **Skills:** step-by-step workflows in `skills/` (game install, Steam artwork, performance, power and thermals,
+  controllers, Decky plugins...), linked into the session's `.claude/skills/`.
+- **Knows your device:** `devices/<vendor>/<model>/` holds what only applies to some handhelds (quirks, display
+  modes, power and fan behaviour, device-specific services); `os/` and `stacks/` do the same for the OS and for
+  emulation suites like EmuDeck. The hardware profile picks the right folders.
+- **Grows with its users:** when a session solves something other owners of that device will hit, the agent offers
+  to turn it into a pull request from your own GitHub account, after you've seen the change.
+- **Stays current:** at session start it checks for a new Sidequest release (once a day) and asks before updating.
+
+Your own instructions for it go in `CLAUDE.local.md` in the session folder. The agent's rules are in
+[agent/AGENT.md](agent/AGENT.md).
+
 ## Requirements
 
 - SteamOS 3.7+ (or another Linux with Steam's Game Mode / gamescope session and systemd).
@@ -118,6 +138,8 @@ a separate one). `claude-session --help` lists the other commands.
 | Scripts (`claude-session`, `claude-open-url`, `claude-notify`, `claude-tts`) | `~/.local/lib/sidequest`, linked in `~/.local/bin` |
 | Session service | `~/.config/systemd/user/claude-session.service` |
 | Settings | `~/.config/sidequest/` |
+| Companion agent | `<project folder>/CLAUDE.md` (imports the agent), `.claude/skills/`, `notes/` (your notebook) |
+| Knowledge base (agent, skills, devices, os, stacks) | `~/.local/lib/sidequest/` |
 | Claude Code hooks (notifications, voice) | `<project folder>/.claude/settings.json` (merged; your hooks are kept) |
 | Decky plugin | `~/homebrew/plugins/sidequest` |
 | Logs | `~/.local/state/sidequest/*.log`, Decky: `journalctl -u plugin_loader` |

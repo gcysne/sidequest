@@ -12,4 +12,7 @@ First public alpha.
 - Steam toasts / desktop notifications when Claude needs you.
 - Optional offline voice (Piper): answers read aloud; a second language is optional and off by default.
 - Works with Decky Loader 3.3.0 (no `termios` in its Python; `LD_LIBRARY_PATH` cleaned for child processes).
+- Companion agent: `agent/AGENT.md` (roles, ground rules, notebook), 14 skills, hardware self-discovery
+  (`hardware-profile`), device/OS/stack knowledge folders (`devices/lenovo/legion-go` first), contribute-back
+  workflow (pull requests from the user's account), daily update check at session start.
 - Tested on a Lenovo Legion Go, SteamOS 3.9.5.
