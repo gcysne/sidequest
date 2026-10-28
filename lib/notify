@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Tell the user something from a background job, in whichever mode is active.
+
+Usage: notify "Title" "Body text" [--urgent] [--app NAME]
+
+Desktop Mode: desktop notification (notify-send).
+Game Mode:    Steam toast through the Sidequest Decky plugin's spool (~/.local/state/sidequest/toasts).
+Every message is also appended to ~/.local/state/sidequest/notify.log.
+"""
+import json, os, subprocess, sys, time
+from pathlib import Path
+
+STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "sidequest"
+SPOOL, ALIVE, LOG = STATE / "toasts", STATE / "decky-alive", STATE / "notify.log"
+
+
+def desktop_env():
+    """Environment of the running Plasma session (callers are often systemd units)."""
+    r = subprocess.run(["pgrep", "-u", str(os.getuid()), "-x", "plasmashell"], capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
+    env = dict(os.environ)
+    try:
+        for kv in Path(f"/proc/{r.stdout.split()[0]}/environ").read_bytes().split(b"\0"):
+            k, _, v = kv.decode(errors="replace").partition("=")
+            if k in ("DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS"):
+                env[k] = v
+    except OSError:
+        pass
+    return env
+
+
+def main():
+    argv = sys.argv[1:]
+    urgent = "--urgent" in argv
+    app = argv[argv.index("--app") + 1] if "--app" in argv else "Sidequest"
+    args = [a for i, a in enumerate(argv) if a != "--urgent" and a != "--app" and (i == 0 or argv[i - 1] != "--app")]
+    if len(args) < 2:
+        print(__doc__, file=sys.stderr)
+        return 2
+    title, body = args[0], args[1]
+    STATE.mkdir(parents=True, exist_ok=True)
+    where = "none"
+    env = desktop_env()
+    if env is not None:
+        subprocess.run(["notify-send", "--app-name", app, "--urgency", "critical" if urgent else "normal",
+                        title, body], env=env)
+        where = "desktop"
+    elif ALIVE.exists() and time.time() - ALIVE.stat().st_mtime < 30:
+        SPOOL.mkdir(parents=True, exist_ok=True)
+        tmp = SPOOL / f".{time.time_ns()}.tmp"
+        tmp.write_text(json.dumps({"title": title, "body": body, "critical": urgent}))
+        tmp.rename(SPOOL / f"{time.time_ns()}.json")
+        where = "toast"
+    with LOG.open("a") as f:
+        f.write(f"{time.strftime('%F %T')} [{where}] {app}: {title}: {body}\n")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
