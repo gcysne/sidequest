@@ -1,0 +1,27 @@
+id: lenovo/legion-go
+name: Lenovo Legion Go (1st generation)
+match:
+  - sys_vendor: LENOVO
+    product_name: 83E1
+  - sys_vendor: LENOVO
+    product_version: Legion Go 8APU1
+maintainers: [gcysne]
+soc: AMD Ryzen Z1 Extreme (8C/16T Zen 4, Radeon 780M, 12 CU RDNA3)
+memory: 16 GB LPDDR5X shared; BIOS sets the GPU carve-out (UMA frame buffer)
+display:
+  size_in: 8.8
+  resolution: 2560x1600
+  native_orientation: portrait (rotated in software)
+  refresh_hz: [60, 144]
+  vrr: false
+controllers:
+  backend: inputplumber        # ships with SteamOS; handles attached and detached controllers
+  usb_ids: ["17ef:6182", "17ef:6184"]
+  back_buttons: [Y1, Y2, Y3, M2, M3]
+power:
+  tdp_control: steamos-manager TdpLimit1 (custom profile only)
+  profiles: [low-power, balanced, performance, custom]
+  performance_profile_limits_w: {sustained: 20, boost: 30, fast_boost: 35}
+  fan_control: none exposed by the kernel (no fan hwmon); see devices/lenovo/_common
+tested:
+  - {os: steamos, version: 3.9.5, kernel: 7.2.7-valve2-2-neptune-72, decky: 3.3.0}

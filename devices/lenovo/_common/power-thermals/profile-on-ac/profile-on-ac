@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""Switch to Lenovo's "performance" power profile while the charger is plugged in and a game runs.
+
+Why: any TDP set through SteamOS Manager (QAM slider) puts Lenovo handhelds in the "custom" profile, where the
+embedded controller uses a quiet fan table; under sustained load the CPU can reach ~99 °C and throttle. The
+"performance" profile (on the original Legion Go: 20 W sustained, 30/35 W boost) uses Lenovo's aggressive fan curve.
+
+On battery, Steam's per-game profile / the QAM slider decide. On AC with a game running, this service sets
+SteamOS Manager's PerformanceProfile to PROFILE and restores the previous profile (and, for "custom", the previous
+TDP) when the charger is unplugged or the game exits. For RESPECT_AFTER seconds after switching it re-applies the
+profile if something resets it (Steam applying its per-game profile at launch); after that a manual change wins.
+
+Games: process names (comm, max 15 chars) matching DEFAULT_GAMES (emulators) or a regex per line in
+~/.config/sidequest/profile-on-ac.games (e.g. `Spider-Man2\\.exe` for a Proton game).
+
+  profile-on-ac              run (as the user service profile-on-ac.service)
+  profile-on-ac --status     print what it sees
+  profile-on-ac --install    install and start the user service;  --uninstall: stop and remove it
+"""
+import os, re, shutil, subprocess, sys, time
+from pathlib import Path
+
+PROFILE = os.environ.get("PROFILE_ON_AC", "performance")
+POLL = 5
+RESPECT_AFTER = 60
+DEFAULT_GAMES = (r"Ryujinx|PPSSPP.*|mgba.*|retroarch|duckstation.*|pcsx2.*|dolphin-emu.*|Cemu|cemu|azahar.*|"
+                 r"melonDS|rpcs3|xemu|flycast|shadps4|Vita3K|xenia.*")
+GAMES_FILE = Path.home() / ".config/sidequest/profile-on-ac.games"
+SVC = ["com.steampowered.SteamOSManager1", "/com/steampowered/SteamOSManager1"]
+IF = "com.steampowered.SteamOSManager1."
+LOG = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "sidequest/profile-on-ac.log"
+UNIT = Path.home() / ".config/systemd/user/profile-on-ac.service"
+
+
+def log(msg):
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with LOG.open("a") as f:
+        f.write(f"{time.strftime('%F %T')} {msg}\n")
+
+
+def games_re():
+    extra = []
+    try:
+        extra = [l.strip() for l in GAMES_FILE.read_text().splitlines() if l.strip() and not l.startswith("#")]
+    except OSError:
+        pass
+    return re.compile("^(" + "|".join([DEFAULT_GAMES] + extra) + ")$", re.I)
+
+
+def on_ac():
+    for p in Path("/sys/class/power_supply").glob("*"):
+        try:
+            if (p / "type").read_text().strip() == "Mains":
+                return (p / "online").read_text().strip() == "1"
+        except OSError:
+            pass
+    return False
+
+
+def running_game(pattern):
+    me = os.getuid()
+    for p in Path("/proc").iterdir():
+        if not p.name.isdigit():
+            continue
+        try:
+            if p.stat().st_uid != me:
+                continue
+            comm = (p / "comm").read_text().strip()
+        except OSError:
+            continue
+        if pattern.match(comm):
+            return comm
+    return None
+
+
+def get(iface, prop):
+    r = subprocess.run(["busctl", "--user", "get-property", *SVC, IF + iface, prop], capture_output=True, text=True)
+    m = re.match(r'[us] "?([^"]*)"?$', r.stdout.strip())
+    return m.group(1) if r.returncode == 0 and m else None
+
+
+def put(iface, prop, sig, value):
+    return subprocess.run(["busctl", "--user", "set-property", *SVC, IF + iface, prop, sig, str(value)],
+                          capture_output=True, text=True).returncode == 0
+
+
+def get_profile():
+    return get("PerformanceProfile1", "PerformanceProfile")
+
+
+def set_profile(p):
+    return put("PerformanceProfile1", "PerformanceProfile", "s", p)
+
+
+def get_tdp():  # only exists in the "custom" profile
+    v = get("TdpLimit1", "TdpLimit")
+    return int(v) if v and v.isdigit() else None
+
+
+def install():
+    src = Path(__file__).resolve().parent / "profile-on-ac.service"
+    UNIT.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(src, UNIT)
+    subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+    subprocess.run(["systemctl", "--user", "enable", "--now", "profile-on-ac.service"], check=True)
+    print(f"installed {UNIT}; log: {LOG}")
+
+
+def uninstall():
+    subprocess.run(["systemctl", "--user", "disable", "--now", "profile-on-ac.service"])
+    UNIT.unlink(missing_ok=True)
+    subprocess.run(["systemctl", "--user", "daemon-reload"])
+    print("removed profile-on-ac.service")
+
+
+def main():
+    if "--install" in sys.argv:
+        return install()
+    if "--uninstall" in sys.argv:
+        return uninstall()
+    if "--status" in sys.argv:
+        print(f"ac={on_ac()} game={running_game(games_re())} profile={get_profile()} tdp={get_tdp()} target_on_ac={PROFILE}")
+        return 0
+    saved = None          # (profile, tdp) we replaced; None = not overriding
+    since = 0.0
+    log(f"started (AC profile {PROFILE})")
+    while True:
+        try:
+            game = running_game(games_re())
+            want = on_ac() and game is not None
+            cur = get_profile()
+            if want and cur is not None and cur != PROFILE:
+                if saved is None:
+                    saved, since = (cur, get_tdp()), time.time()
+                    if set_profile(PROFILE):
+                        log(f"AC + {game}: profile {cur} (TDP {saved[1]}) -> {PROFILE}")
+                elif time.time() - since < RESPECT_AFTER:
+                    if set_profile(PROFILE):
+                        log(f"profile was reset to {cur} right after launch; re-applied {PROFILE}")
+                elif saved[0] != "manual":
+                    log(f"profile changed to {cur} by hand/Steam; leaving it")
+                    saved = ("manual", None)
+            elif not want and saved is not None:
+                if saved[0] != "manual" and cur == PROFILE:
+                    set_profile(saved[0])
+                    if saved[0] == "custom" and saved[1]:
+                        time.sleep(1)
+                        put("TdpLimit1", "TdpLimit", "u", saved[1])
+                    log(f"{'battery' if game else 'game closed'}: profile restored to {saved[0]} (TDP {saved[1]})")
+                saved = None
+        except Exception as e:  # never die; systemd would restart us anyway
+            log(f"error: {e}")
+        time.sleep(POLL)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
