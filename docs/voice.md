@@ -72,8 +72,9 @@ claude-tts voice en_GB-cori-high
 
 Some voices have several speakers (`claude-tts voices` lists them); pick one with `claude-tts voice NAME SPEAKER`.
 
-**Portuguese answers** are detected and read with a second voice, if you add one:
-`claude-tts voice-pt NAME`. Check each voice's license on its Hugging Face page; some are non-commercial.
+**A second language** (off by default): answers in Portuguese, Spanish, French, German or Italian can be read with
+a second voice. Download a Piper voice for that language into `~/.local/share/piper-voices/`, then
+`claude-tts voice2 NAME LANG` (e.g. `claude-tts voice2 pt_BR-faber-medium pt`); `claude-tts voice2 off` turns it off. Check each voice's license on its Hugging Face page; some are non-commercial.
 
 ## Remove
 
@@ -91,4 +92,4 @@ rm -f ~/.local/bin/uv ~/.local/bin/uvx          # only if nothing else uses uv
 |---|---|
 | Silence | `claude-tts say test`. If that's silent too, check the volume and that `pw-play` exists (PipeWire, standard on SteamOS). `claude-tts voices` must list the voice that's set. |
 | Answers aren't read, but `say` works | `claude-tts on`; re-run `./install.sh` so the voice hook is added to your project's `.claude/settings.json`. |
-| Reads the wrong language | Portuguese detection is simple; set the voices with `claude-tts voice` / `voice-pt`. |
+| Reads the wrong language | Language detection is simple (common words); set the voices with `claude-tts voice` / `voice2`, or `voice2 off`. |

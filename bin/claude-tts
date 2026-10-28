@@ -6,12 +6,13 @@
   claude-tts on | off          enable / disable speaking from the hook
   claude-tts stop              stop what is playing now
   claude-tts voice NAME [SPK]  set the English voice (e.g. en_GB-alan-medium, en_GB-semaine-medium obadiah)
-  claude-tts voice-pt NAME     set the Portuguese voice
+  claude-tts voice2 NAME LANG  read answers in LANG (pt, es, fr, de, it) with voice NAME; off by default
+  claude-tts voice2 off        English voice only (default)
   claude-tts voices            list installed voices and the current settings
   claude-tts demo              play a short sample of every installed voice
 
 Long answers: only the first paragraph (the TL;DR) is read. Code blocks and
-tables are skipped. Portuguese text is read with the Portuguese voice.
+tables are skipped. Optionally, answers in one other language are read with a second voice (voice2).
 """
 import json, os, re, signal, subprocess, sys, tempfile
 from pathlib import Path
@@ -24,14 +25,27 @@ PIDFILE = RUN / "claude-tts.pid"
 LONG = 500  # cleaned characters; above this only the first paragraph is read
 
 DEFAULTS = {"enabled": True, "voice": "en_GB-alan-medium", "speaker": None,
-            "voice_pt": "pt_BR-dii", "speed": 1.0}
+            "voice2": None, "lang2": None, "speed": 1.0}
+
+# Second-language detection: a few very common words, plus characters English doesn't use.
+LANGS = {
+    "pt": ({"não", "você", "está", "também", "então", "para", "uma", "com", "isso", "agora"}, r"ção|ções|ã|õ"),
+    "es": ({"que", "está", "también", "pero", "para", "una", "con", "esto", "ahora", "puedes"}, r"ñ|¿|¡|ción"),
+    "fr": ({"est", "pas", "vous", "avec", "pour", "une", "aussi", "mais", "maintenant", "c'est"}, r"ç|è|ê|à"),
+    "de": ({"nicht", "und", "ist", "auch", "mit", "eine", "jetzt", "aber", "kann", "dass"}, r"ß|ä|ö|ü"),
+    "it": ({"non", "sono", "anche", "per", "una", "con", "questo", "adesso", "però", "puoi"}, r"è|ò|ù|zione"),
+}
 
 
 def load():
     try:
-        return {**DEFAULTS, **json.loads(CONF.read_text())}
+        c = {**DEFAULTS, **json.loads(CONF.read_text())}
     except (OSError, ValueError):
         return dict(DEFAULTS)
+    old = c.pop("voice_pt", None)  # settings from older versions
+    if old and old != "none" and not c.get("voice2"):
+        c["voice2"], c["lang2"] = old, "pt"
+    return c
 
 
 def save(c):
@@ -67,11 +81,12 @@ def pick(text):
     return paras[0] if len(whole) > LONG else whole
 
 
-def is_pt(text):
-    words = re.findall(r"\w+", text.lower())
-    hits = sum(w in {"não", "você", "está", "também", "então", "para", "uma", "com", "isso", "agora"}
-               for w in words)
-    return hits >= 2 or bool(re.search(r"ção|ções|ã|õ", text))
+def is_lang(text, lang):
+    if lang not in LANGS:
+        return False
+    common, chars = LANGS[lang]
+    words = re.findall(r"[\w']+", text.lower())
+    return sum(w in common for w in words) >= 2 or bool(re.search(chars, text))
 
 
 def stop():
@@ -88,8 +103,9 @@ def speak(text, c, voice=None, speaker=None):
     if not text:
         return
     if voice is None:
-        if is_pt(text) and (VOICES / f"{c['voice_pt']}.onnx").exists():
-            voice, speaker = c["voice_pt"], None
+        v2 = c.get("voice2")
+        if v2 and is_lang(text, c.get("lang2")) and (VOICES / f"{v2}.onnx").exists():
+            voice, speaker = v2, None
         else:
             voice, speaker = c["voice"], c["speaker"]
     model = VOICES / f"{voice}.onnx"
@@ -132,13 +148,20 @@ def main(argv):
         print(f"claude-tts {cmd}")
     elif cmd == "stop":
         stop()
-    elif cmd in ("voice", "voice-pt") and len(argv) >= 2:
+    elif cmd == "voice2" and argv[1:2] == ["off"]:
+        c["voice2"] = c["lang2"] = None
+        save(c)
+        print(json.dumps(c))
+    elif cmd in ("voice", "voice2", "voice-pt") and len(argv) >= 2:
         if not (VOICES / f"{argv[1]}.onnx").exists():
             sys.exit(f"no voice {argv[1]} in {VOICES}")
         if cmd == "voice":
             c["voice"], c["speaker"] = argv[1], (argv[2] if len(argv) > 2 else None)
-        else:
-            c["voice_pt"] = argv[1]
+        else:  # voice-pt NAME: older spelling of voice2 NAME pt
+            lang = "pt" if cmd == "voice-pt" else (argv[2] if len(argv) > 2 else "")
+            if lang not in LANGS:
+                sys.exit(f"language must be one of: {', '.join(LANGS)}")
+            c["voice2"], c["lang2"] = argv[1], lang
         save(c)
         print(json.dumps(c))
     elif cmd == "speed" and len(argv) == 2:
@@ -151,15 +174,14 @@ def main(argv):
             print(f.stem, ("speakers: " + ", ".join(spk)) if spk else "")
         print("current:", json.dumps(c))
     elif cmd == "demo":
-        samples = [("en_GB-cori-high", None, "Hello, I'm Cori, the British female voice."),
-                   ("en_GB-alan-medium", None, "Good evening. I'm Alan. All systems are online."),
-                   ("en_GB-semaine-medium", "obadiah", "Good evening. I'm Obadiah. All systems are online."),
-                   ("en_GB-semaine-medium", "spike", "Hi, I'm Spike, another British male voice."),
-                   ("pt_BR-dii", None, "Olá, eu sou a Dii, a voz em português do Brasil.")]
-        for v, s, t in samples:
-            if (VOICES / f"{v}.onnx").exists():
-                print(v, s or "")
-                speak(t, c, voice=v, speaker=s)
+        hello = {"en": "Hello. This is how I sound.", "pt": "Olá. É assim que eu falo.",
+                 "es": "Hola. Así es como sueno.", "fr": "Bonjour. Voici ma voix.",
+                 "de": "Hallo. So klinge ich.", "it": "Ciao. Questa è la mia voce."}
+        for f in sorted(VOICES.glob("*.onnx")):
+            spk = list(json.loads(Path(str(f) + ".json").read_text()).get("speaker_id_map") or {}) or [None]
+            for s in spk[:3]:
+                print(f.stem, s or "")
+                speak(hello.get(f.stem[:2], hello["en"]), c, voice=f.stem, speaker=s)
     else:
         print(__doc__)
 

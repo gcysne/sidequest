@@ -8,16 +8,14 @@ Reads the hook JSON on stdin (Notification or Stop event).
 
 Desktop Mode: desktop notification (notify-send).
 Game Mode:    Steam toast, through the claude-deck Decky plugin's spool
-              (~/.local/state/claude-deck/toasts/*.json). The legion-go-guards plugin's
-              spool is used as a fallback when only that plugin is running.
+              (~/.local/state/claude-deck/toasts/*.json), when the plugin is running.
 """
 import json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
-# (toast spool, heartbeat file touched by the plugin while it runs), in order of preference
-SPOOLS = [(STATE / "claude-deck/toasts", STATE / "claude-deck/decky-alive"),
-          (STATE / "legion-go-guards/toasts", STATE / "legion-go-guards/decky-alive")]
+# (toast spool, heartbeat file touched by the plugin while it runs)
+SPOOLS = [(STATE / "claude-deck/toasts", STATE / "claude-deck/decky-alive")]
 RUN = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "claude-deck"
 LOG = STATE / "claude-deck/notify.log"
 
