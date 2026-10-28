@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Install a plugin from the official Decky store (plugins.deckbrew.xyz) from the
+# command line, the same way Decky's store UI does: download the store zip,
+# check its sha256 against the store listing, unpack it into ~/homebrew/plugins,
+# and restart Decky. Only the copy + restart runs as root (Decky owns that folder).
+#
+# Usage: decky-store-install "<exact store name>" [version]
+#   e.g. decky-store-install "CSS Loader"
+set -euo pipefail
+
+NAME="${1:?usage: decky-store-install \"<store name>\" [version]}"
+WANT_VER="${2:-}"
+PLUGINS="$HOME/homebrew/plugins"
+[[ -d "$PLUGINS" ]] || { echo "Decky not installed ($PLUGINS missing)" >&2; exit 1; }
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+curl -sfL https://plugins.deckbrew.xyz/plugins -o "$WORK/store.json"
+read -r VER HASH < <(python3 -I - "$WORK/store.json" "$NAME" "$WANT_VER" <<'EOF'
+import json, sys
+store, name, want = sys.argv[1], sys.argv[2], sys.argv[3]
+for p in json.load(open(store)):
+    if p["name"] == name:
+        vs = [v for v in p["versions"] if not want or v["name"] == want]
+        if vs:
+            print(vs[0]["name"], vs[0]["hash"]); sys.exit(0)
+sys.exit(f"'{name}' {want} not found in the Decky store")
+EOF
+)
+
+echo "Store: $NAME $VER (sha256 $HASH)"
+curl -sfL -o "$WORK/plugin.zip" \
+    "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions/$HASH.zip"
+echo "$HASH  $WORK/plugin.zip" | sha256sum -c --quiet || { echo "sha256 mismatch, aborting" >&2; exit 1; }
+
+mkdir "$WORK/x"
+unzip -q "$WORK/plugin.zip" -d "$WORK/x"
+DIRNAME="$(ls "$WORK/x")"
+[[ $(echo "$DIRNAME" | wc -l) -eq 1 && -f "$WORK/x/$DIRNAME/plugin.json" ]] \
+    || { echo "unexpected zip layout" >&2; exit 1; }
+
+DEST="$PLUGINS/$DIRNAME"
+TMP="$HOME/homebrew/.$DIRNAME.tmp"
+echo "Installing to $DEST and restarting Decky (needs root: Decky owns $PLUGINS)."
+# Copy next to the plugins folder, swap in with one rename, restart Decky.
+sudo ${SUDO_ASKPASS:+-A} -p "[sudo] password to install the Decky plugin $NAME: " sh -c 'rm -rf "$3" && cp -r "$2" "$3" && rm -rf "$1" && mv "$3" "$1" && systemctl restart plugin_loader' \
+    _ "$DEST" "$WORK/x/$DIRNAME" "$TMP"
+echo "Done: $NAME $VER installed."
