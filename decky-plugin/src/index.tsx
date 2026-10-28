@@ -1,5 +1,6 @@
-import { ButtonItem, ConfirmModal, Navigation, PanelSection, PanelSectionRow, showModal, staticClasses } from "@decky/ui";
-import { addEventListener, callable, definePlugin, removeEventListener, toaster } from "@decky/api";
+import { ButtonItem, ConfirmModal, Navigation, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
+import { addEventListener, callable, definePlugin, removeEventListener, routerHook, toaster } from "@decky/api";
+import { ABOUT_ROUTE, AboutRouter, TitleView } from "./about";
 import { useEffect, useState } from "react";
 import { closeClaudePanel, openClaudePanel } from "./panel";
 import { patchStatusBar, unpatchStatusBar } from "./statusbar";
@@ -127,12 +128,13 @@ export default definePlugin(() => {
   setOpener(openClaudePanel);
   addEventListener<[string]>("open_url", onOpenUrl);
   addEventListener<[any]>("toast", onToast);
+  routerHook.addRoute(ABOUT_ROUTE, () => <AboutRouter />, { exact: true });
   let iconOk = false;
   try { iconOk = patchStatusBar(); } catch (e) { console.error("[claude-deck] patch failed", e); }
 
   return {
     name: "Claude Deck",
-    titleView: <div className={staticClasses.Title}>Claude Deck</div>,
+    titleView: <TitleView />,
     content: <QamContent iconOk={iconOk} />,
     icon: <span style={{ fontWeight: 700 }}>{"✳"}</span>,
     onDismount() {
@@ -141,6 +143,7 @@ export default definePlugin(() => {
       removeEventListener("toast", onToast);
       closeClaudePanel();
       unpatchStatusBar();
+      routerHook.removeRoute(ABOUT_ROUTE);
     },
   };
 });

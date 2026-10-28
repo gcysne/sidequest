@@ -227,7 +227,20 @@ async def _spool_loop():
 SPOOL_TASK = None
 
 
+def _version() -> str:
+    v = getattr(decky, "DECKY_PLUGIN_VERSION", "")
+    if not v:
+        try:
+            v = json.loads((Path(decky.DECKY_PLUGIN_DIR) / "package.json").read_text()).get("version", "")
+        except (OSError, ValueError, AttributeError):
+            v = ""
+    return v
+
+
 class Plugin:
+    async def plugin_info(self) -> dict:
+        return {"version": _version()}
+
     async def session_status(self) -> dict:
         try:
             r = _tmux("list-sessions", "-F", "#{session_name}")
