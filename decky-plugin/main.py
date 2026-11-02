@@ -227,6 +227,64 @@ async def _spool_loop():
 SPOOL_TASK = None
 
 
+REPO = "gcysne/sidequest"
+UPDATE_COMMAND = f"curl -fsSL https://raw.githubusercontent.com/{REPO}/main/get.sh | bash"
+# Same cache as the session-start hook (bin/sidequest-update-check): GitHub is asked at most once a day.
+UPDATE_CACHE = Path(decky.DECKY_USER_HOME) / ".local/state/sidequest/update-check.json"
+INSTALLED_VERSION = Path(decky.DECKY_USER_HOME) / ".local/lib/sidequest/VERSION"
+
+
+def _version_key(text: str):
+    """Semver order (a release sorts after its pre-releases)."""
+    main, _, pre = str(text or "").strip().lstrip("vV").partition("-")
+    nums = [int(m.group()) if (m := re.match(r"\d+", x)) else 0 for x in main.split(".")]
+    nums = (nums + [0, 0, 0])[:3]
+    if not pre:
+        return (*nums, 1, ())
+    return (*nums, 0, tuple((0, int(x), "") if x.isdigit() else (1, 0, x) for x in pre.split(".")))
+
+
+def _check_release(force: bool) -> dict:
+    """Newest GitHub release, pre-releases included (Sidequest's alpha releases are marked as pre-releases, which
+    GitHub's releases/latest ignores)."""
+    import urllib.error
+    import urllib.request
+    try:
+        current = INSTALLED_VERSION.read_text().strip() or _version()
+    except OSError:
+        current = _version()
+    try:
+        cache = json.loads(UPDATE_CACHE.read_text())
+    except (OSError, ValueError):
+        cache = {}
+    if force or time.time() - cache.get("checked", 0) > 86400 or "url" not in cache:
+        cache = {"checked": time.time()}
+        try:
+            req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases?per_page=10",
+                                         headers={"Accept": "application/vnd.github+json", "User-Agent": "sidequest"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                rels = [x for x in json.load(r) if not x.get("draft")]
+            if rels:
+                best = max(rels, key=lambda x: _version_key(x.get("tag_name", "")))
+                cache.update(latest=best["tag_name"].lstrip("vV"), url=best.get("html_url", ""),
+                             notes=(best.get("body") or "")[:1500])
+            else:
+                cache.update(url="", error="no release published yet")
+        except urllib.error.HTTPError as e:
+            cache.update(url="", error="no release published yet" if e.code == 404 else f"GitHub answered {e.code}")
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            cache.update(url="", error=f"couldn't reach GitHub ({getattr(e, 'reason', e)})")
+        try:
+            UPDATE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            UPDATE_CACHE.write_text(json.dumps(cache))
+        except OSError:
+            pass
+    out = {k: cache.get(k) for k in ("latest", "url", "notes", "error") if cache.get(k)}
+    out.update(current=current, command=UPDATE_COMMAND)
+    out["newer"] = bool(out.get("latest")) and _version_key(out["latest"]) > _version_key(current)
+    return out
+
+
 def _version() -> str:
     v = getattr(decky, "DECKY_PLUGIN_VERSION", "")
     if not v:
@@ -240,6 +298,9 @@ def _version() -> str:
 class Plugin:
     async def plugin_info(self) -> dict:
         return {"version": _version()}
+
+    async def update_check(self, force: bool = False) -> dict:
+        return await asyncio.get_running_loop().run_in_executor(None, _check_release, bool(force))
 
     async def session_status(self) -> dict:
         try:
