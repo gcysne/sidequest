@@ -26,6 +26,16 @@ and your phone.
 - **About page**: the cog in the plugin's title bar (Quick Access > Sidequest) shows the version, the controls and
   the credits.
 
+## Screenshots
+
+<img src="docs/images/sidequest-panel.png" width="250" alt="Quick Access panel: open the Claude panel, new conversation, stop session">
+
+The ⚙ cog opens the About page:
+
+| About | Controls | Credits |
+|---|---|---|
+| <img src="docs/images/sidequest-about.png" alt="About: version, update check, project links"> | <img src="docs/images/sidequest-controls.png" alt="Controller mapping in the Claude panel"> | <img src="docs/images/sidequest-credits.png" alt="Credits: creator Gabriel Cysne"> |
+
 ## The companion agent
 
 Sidequest isn't only a terminal: the Claude session it runs is set up as a **companion for your handheld**.
