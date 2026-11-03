@@ -28,6 +28,14 @@ and your phone.
 
 ## Screenshots
 
+The Claude panel in Game Mode, opened from the ✳ icon in Steam's status bar:
+
+<img src="docs/images/sidequest-claude-panel.png" width="600" alt="Claude Code running in the Sidequest panel in Game Mode, greeting the user">
+
+<img src="docs/images/sidequest-statusbar.png" width="350" alt="Steam's status bar with the Sidequest icon">
+
+The Quick Access entry:
+
 <img src="docs/images/sidequest-panel.png" width="250" alt="Quick Access panel: open the Claude panel, new conversation, stop session">
 
 The ⚙ cog opens the About page:
