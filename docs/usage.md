@@ -63,6 +63,9 @@ Steam's own buttons (<kbd>STEAM</kbd>, <kbd>…</kbd>) keep working as usual.
 2. Edit with the keyboard's Backspace and the <kbd>D-pad</kbd> ←/→.
 3. Send with the keyboard's **Enter**, or close the keyboard and press <kbd>A</kbd>.
 
+While the keyboard is open, the panel ends just above it, so Claude's prompt stays visible; it goes back to full
+height when the keyboard closes. If the keyboard is moved to the top of the screen, the panel starts below it.
+
 A USB or Bluetooth keyboard also works while the panel is open.
 
 **Voice:** dictated text from Claude Code's `/voice` lands in the same prompt, so you can fix it the same way before
