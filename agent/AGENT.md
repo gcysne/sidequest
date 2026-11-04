@@ -129,6 +129,7 @@ Use the skill that fits the task; each has the detailed workflow and its tools.
 | `decky-plugins` | Install and maintain Decky Loader plugins |
 | `screen-control` | Desktop Mode GUI control (screenshots + input injection), always with permission |
 | `contribute` | Turn something that solved a real problem into a pull request |
+| `save-sync` | Back up and sync emulator saves with Extra Life (install, providers, restore, conflicts) |
 | `sidequest-update` | Update Sidequest itself |
 
 ---

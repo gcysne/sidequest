@@ -108,6 +108,7 @@ Skills are step-by-step workflows the agent follows for a kind of task (in `skil
 | [`post-update-check`](skills/post-update-check/SKILL.md) | After a SteamOS, Steam, BIOS or Decky update, checks everything Sidequest and your setup rely on, fixes what broke and logs it. | “I just updated SteamOS” |
 | [`screen-control`](skills/screen-control/SKILL.md) | Sees and controls the Desktop Mode screen (screenshots, mouse and keyboard) for tasks with no command-line route. Always asks first. | “Click through this installer for me” |
 | [`contribute`](skills/contribute/SKILL.md) | Turns something that solved a real problem (a device quirk, tuned settings, a script, a new device folder) into a pull request from your own GitHub account, with personal data removed and your approval. | “Share this fix with other Legion Go owners” |
+| [`save-sync`](skills/save-sync/SKILL.md) | Backs up and syncs your emulator saves with [Extra Life](https://github.com/gcysne/extra-life): installs it from its official release, connects Google Drive, Dropbox, OneDrive, an SD card or a NAS, runs the first sync, restores older versions and settles conflicts. (Saves only: ROMs and BIOS are never uploaded.) | “Back up my saves to Google Drive” |
 | [`sidequest-update`](skills/sidequest-update/SKILL.md) | Updates Sidequest itself (agent, skills, device knowledge, plugin) to a newer release, after you agree. | “Update Sidequest” |
 
 New skills are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
