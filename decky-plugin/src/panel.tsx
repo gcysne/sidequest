@@ -2,9 +2,9 @@
 // and native B / Esc handling; CSS turns the centered dialog into a side panel.
 import { ModalRoot, showModal } from "@decky/ui";
 import { callable } from "@decky/api";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEFAULT_SETTINGS, Settings, getState, setState, subscribe } from "./store";
-import { ClaudeTerminal } from "./terminal";
+import { ClaudeTerminal, keyboardManager } from "./terminal";
 
 const getSettings = callable<[], Settings>("get_settings");
 const CSS_ID = "sidequest-panel-css";
@@ -42,12 +42,71 @@ function ensureCss(doc: Document, width: number) {
   s.textContent = css(width); // overwrite: settings or a reinstalled plugin may change it
 }
 
+// Steam's on-screen keyboard is drawn over the bottom (or top) of the screen. While it shows, the panel ends at its
+// edge so the prompt stays visible; the terminal re-fits on resize and tells tmux. The keyboard is found by its
+// descriptive class names (keys "KeyTheme_*", container "Layout_*"); if Steam renames them, assume the bottom 34 %
+// (measured on the Legion Go, Steam stable 2026-11).
+const KEYBOARD_FALLBACK = 0.34;
+
+function keyboardRect(doc: Document): DOMRect | null {
+  const key = doc.querySelector('[class*="KeyTheme_"]') as HTMLElement | null;
+  if (!key) return null;
+  let el: HTMLElement | null = key;
+  while (el && !/(^|\s)Layout_/.test(String(el.className))) el = el.parentElement;
+  const r = (el ?? key).getBoundingClientRect();
+  return r.height > 0 ? r : null;
+}
+
+function fitAroundKeyboard(doc: Document, showing: boolean) {
+  const modal = doc.querySelector(".sidequest-modal") as HTMLElement | null;
+  if (!modal) return;
+  modal.style.removeProperty("top");
+  modal.style.removeProperty("bottom");
+  if (!showing) return;
+  const h = doc.defaultView?.innerHeight ?? 0;
+  const r = keyboardRect(doc);
+  if (r && r.top < h / 2) {
+    modal.style.setProperty("top", `${Math.round(r.bottom)}px`, "important");          // keyboard at the top
+  } else {
+    const kbTop = r ? r.top : h * (1 - KEYBOARD_FALLBACK);
+    modal.style.setProperty("bottom", `${Math.max(parseInt(BOTTOM), Math.round(h - kbTop))}px`, "important");
+  }
+}
+
+function useKeyboardInset(ref: { current: HTMLElement | null }) {
+  useEffect(() => {
+    const doc = ref.current?.ownerDocument;
+    if (!doc) return;
+    const shown = keyboardManager(doc)?.IsShowingVirtualKeyboard;
+    const timers: number[] = [];
+    const update = () => {
+      const showing = !!shown?.Value;
+      fitAroundKeyboard(doc, showing);
+      // The keyboard is laid out (and may slide in) just after it's reported as showing: measure again.
+      timers.splice(0).forEach((t) => window.clearTimeout(t));
+      if (showing) [150, 400, 800].forEach((ms) => timers.push(window.setTimeout(() => fitAroundKeyboard(doc, !!shown?.Value), ms)));
+    };
+    update();
+    let sub: { Unsubscribe?: () => void } | undefined;
+    try { sub = shown?.Subscribe?.(update); } catch { sub = undefined; }
+    const poll = sub ? 0 : window.setInterval(update, 500);              // no Subscribe on this Steam version
+    return () => {
+      try { sub?.Unsubscribe?.(); } catch { /* Steam reloaded */ }
+      window.clearInterval(poll);
+      timers.forEach((t) => window.clearTimeout(t));
+      fitAroundKeyboard(doc, false);
+    };
+  }, []);
+}
+
 function PanelBody({ close }: { close: () => void }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useKeyboardInset(bodyRef);
   const [s, set] = useState(getState());
   useEffect(() => subscribe(() => set(getState())), []);
   useEffect(() => markClosed, []); // unmounted by any route (B, Esc, Steam closing modals)
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", color: "#dcdedf" }}>
+    <div ref={bodyRef} style={{ display: "flex", flexDirection: "column", height: "100%", color: "#dcdedf" }}>
       <div style={{ height: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", borderBottom: "1px solid #2f3640" }}>
         <span style={{ color: "#d97757", fontSize: 22, fontWeight: 700 }}>{"✳"}</span>
         <span style={{ fontWeight: 600, fontSize: 17 }}>Claude</span>

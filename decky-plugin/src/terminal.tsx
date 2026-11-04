@@ -60,7 +60,7 @@ function b64ToBytes(b64: string) {
 }
 
 // Steam's on-screen keyboard belongs to the window that shows the panel.
-function keyboardManager(doc: Document): any {
+export function keyboardManager(doc: Document): any {
   const store = (window as any).SteamUIStore?.WindowStore;
   const wins: any[] = [...(store?.SteamUIWindows ?? [])];
   const inst = wins.find((w) => (w.m_BrowserWindow ?? w.BrowserWindow)?.document === doc) ?? store?.GamepadUIMainWindowInstance;
@@ -161,7 +161,10 @@ export function ClaudeTerminal() {
 
     termOpen(term.cols, term.rows).then((r) => { if (!r.ok) setError(r.error ?? "could not attach"); });
 
-    const ro = new ResizeObserver(() => {
+    // The panel lives in Steam's Big Picture window while this code runs in SharedJSContext: a ResizeObserver from
+    // this context never fires for elements in the other window, so use the panel window's own constructor.
+    const RO: typeof ResizeObserver = (el.ownerDocument.defaultView as any)?.ResizeObserver ?? ResizeObserver;
+    const ro = new RO(() => {
       const before = `${term.cols}x${term.rows}`;
       fit.fit();
       if (`${term.cols}x${term.rows}` !== before) termResize(term.cols, term.rows);

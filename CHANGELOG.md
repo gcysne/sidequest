@@ -13,6 +13,8 @@ First public alpha.
 - Device, OS and emulation-stack knowledge moved under `knowledge/`; README sections for it and for every skill.
 - Pull requests: automatic security scan (rejects binaries, prompt injection, obfuscated code, unofficial
   downloads...; warns on risky commands), advisory AI security review, code owner and a branch ruleset for `main`.
+- Fixed: Steam's on-screen keyboard covered the bottom of the Claude panel (and the prompt). The panel now ends
+  at the keyboard's edge while it shows, and the terminal re-fits (it never re-fitted after opening before).
 - Persistent session in tmux under a systemd user service, shared with Desktop Mode (`claude-session`).
 - Steam toasts / desktop notifications when Claude needs you.
 - Optional offline voice (Piper): answers read aloud; a second language is optional and off by default.
