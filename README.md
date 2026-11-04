@@ -54,15 +54,63 @@ Sidequest isn't only a terminal: the Claude session it runs is set up as a **com
   change it makes (with how to undo it), what's in progress, and one page per game. New sessions read it first.
 - **Skills:** step-by-step workflows in `skills/` (game install, Steam artwork, performance, power and thermals,
   controllers, Decky plugins...), linked into the session's `.claude/skills/`.
-- **Knows your device:** `devices/<vendor>/<model>/` holds what only applies to some handhelds (quirks, display
-  modes, power and fan behaviour, device-specific services); `os/` and `stacks/` do the same for the OS and for
-  emulation suites like EmuDeck. The hardware profile picks the right folders.
+- **Knows your device:** the [shared knowledge](#shared-knowledge-knowledge) folder holds what only applies to some
+  handhelds, operating systems and emulation suites. The hardware profile picks the folders that match yours.
 - **Grows with its users:** when a session solves something other owners of that device will hit, the agent offers
   to turn it into a pull request from your own GitHub account, after you've seen the change.
 - **Stays current:** at session start it checks for a new Sidequest release (once a day) and asks before updating.
 
 Your own instructions for it go in `CLAUDE.local.md` in the session folder. The agent's rules are in
 [agent/AGENT.md](agent/AGENT.md).
+
+## Shared knowledge (`knowledge/`)
+
+Everything Sidequest knows about specific setups lives in **[`knowledge/`](knowledge/)**, separate from the code:
+
+| Folder | What's in it | Today |
+|---|---|---|
+| [`knowledge/devices/`](knowledge/devices/) | Per handheld: how to recognise it, display modes, controllers, power and fan controls, quirks, known-good settings, and device-specific scripts and services | Lenovo Legion Go (with the `profile-on-ac` fan/power service), common notes for any handheld |
+| [`knowledge/os/`](knowledge/os/) | Per OS: what survives updates, how to install things safely, where logs are | SteamOS, Bazzite |
+| [`knowledge/stacks/`](knowledge/stacks/) | Per emulation suite or frontend: paths, launchers, emulator quirks | EmuDeck |
+
+The agent reads the folders that match your machine before it gives device-specific advice, so a fix found once on
+one Legion Go helps every Legion Go owner.
+
+**Your handheld isn't covered, or you found something better?** That's the most valuable contribution you can make,
+and you don't have to write it yourself. When your agent solves a problem other owners would hit, it offers to share
+it; or just ask it:
+
+> Contribute what we learned about this device to Sidequest.
+
+It writes the change into the right folder, strips personal data (user names, serials, IPs, your game library),
+shows you the result and, only after your yes, opens a pull request from **your** GitHub account. New devices,
+other OSes (ChimeraOS, Bazzite...), other stacks (RetroDECK, ES-DE setups...) and tuned per-game settings are all
+welcome. Details: [knowledge/README.md](knowledge/README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Skills
+
+Skills are step-by-step workflows the agent follows for a kind of task (in `skills/`, linked into the session's
+`.claude/skills/`). You don't call them by name: ask for what you want and the agent picks the right one (or type
+`/<skill>` to force it).
+
+| Skill | What it does | Ask it, for example |
+|---|---|---|
+| [`game-install`](skills/game-install/SKILL.md) | Installs a game you supply (ROM, disc image, Switch NSP/XCI, PC game, native-port dump) so it works from Game Mode: right folder, metadata, Steam shortcut, artwork, controllers. Optional unattended inbox: drop a file in a folder and it gets installed. | “Install the Zelda NSP I put in Downloads” |
+| [`rom-library`](skills/rom-library/SKILL.md) | Organizes an emulation library: one folder per system, No-Intro/Redump naming, one file per game, BIOS placement, duplicates, and scraped metadata and artwork for the frontend. | “Clean up my SNES folder and scrape the artwork” |
+| [`native-ports`](skills/native-ports/SKILL.md) | Finds, compares, installs and updates native PC ports of console games: decompilations, static recompilations and port runtimes (Ship of Harkinian, Zelda64Recomp...). | “Is there a native port of Mario 64? Install the best one” |
+| [`steam-library`](skills/steam-library/SKILL.md) | Manages non-Steam shortcuts live through Steam's client API: add shortcuts, collections, launch options, full artwork from SteamGridDB, checked visually. | “Put all my Switch games in a collection with artwork” |
+| [`launch-debugging`](skills/launch-debugging/SKILL.md) | Diagnoses games that don't start, crash or hang: Proton versions, logs, anti-cheat, launchers, prefixes, shader cache. | “This game closes right after the logo” |
+| [`performance`](skills/performance/SKILL.md) | Measures fps, frame pacing, CPU/GPU load and clocks, temperatures and power; finds the bottleneck; tunes the frame cap, power and in-game settings. | “Find the best settings for this game at 60 fps” |
+| [`power-thermals`](skills/power-thermals/SKILL.md) | TDP and performance profiles, CPU boost, GPU clocks, fan behaviour, charger-dependent profiles, battery care. | “Use more power when I'm on the charger” |
+| [`controllers`](skills/controllers/SKILL.md) | Fixes controllers that aren't detected, wrong or stuck buttons, wrong player order in emulators, Steam mappings for unknown pads. | “Player 2 is wrong in Dolphin” |
+| [`decky-plugins`](skills/decky-plugins/SKILL.md) | Installs, updates, troubleshoots and removes Decky Loader and its plugins, from the store or established community repos. | “Decky disappeared after the update” |
+| [`hardware-profile`](skills/hardware-profile/SKILL.md) | Discovers this handheld's hardware and software (model, CPU/GPU, display, storage, controllers, power and fan interfaces, OS, emulation stack), matches the device/OS/stack knowledge folders and writes the notebook's hardware page. | Runs on its own in the first session |
+| [`post-update-check`](skills/post-update-check/SKILL.md) | After a SteamOS, Steam, BIOS or Decky update, checks everything Sidequest and your setup rely on, fixes what broke and logs it. | “I just updated SteamOS” |
+| [`screen-control`](skills/screen-control/SKILL.md) | Sees and controls the Desktop Mode screen (screenshots, mouse and keyboard) for tasks with no command-line route. Always asks first. | “Click through this installer for me” |
+| [`contribute`](skills/contribute/SKILL.md) | Turns something that solved a real problem (a device quirk, tuned settings, a script, a new device folder) into a pull request from your own GitHub account, with personal data removed and your approval. | “Share this fix with other Legion Go owners” |
+| [`sidequest-update`](skills/sidequest-update/SKILL.md) | Updates Sidequest itself (agent, skills, device knowledge, plugin) to a newer release, after you agree. | “Update Sidequest” |
+
+New skills are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Requirements
 
