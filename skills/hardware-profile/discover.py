@@ -12,7 +12,7 @@ import glob, json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 SIDEQUEST = Path(os.environ.get("SIDEQUEST_HOME", Path.home() / ".local/lib/sidequest"))
-if not (SIDEQUEST / "devices").is_dir():          # running from a git clone
+if not (SIDEQUEST / "knowledge" / "devices").is_dir():   # running from a git clone
     SIDEQUEST = Path(__file__).resolve().parents[2]
 
 
@@ -200,7 +200,7 @@ def load_devices():
     except ImportError:
         return []
     out = []
-    for f in sorted((SIDEQUEST / "devices").glob("**/device.yaml")):
+    for f in sorted((SIDEQUEST / "knowledge" / "devices").glob("**/device.yaml")):
         try:
             d = yaml.safe_load(f.read_text()) or {}
         except yaml.YAMLError:
@@ -224,17 +224,17 @@ def profile():
     dev = match_device(ids)
     folders = []
     if dev:
-        vendor = dev["_folder"].split("/")[1]
-        folders = [dev["_folder"], f"devices/{vendor}/_common", "devices/_common"]
+        vendor = dev["_folder"].split("/")[2]     # knowledge/devices/<vendor>/<model>
+        folders = [dev["_folder"], f"knowledge/devices/{vendor}/_common", "knowledge/devices/_common"]
     else:
-        folders = ["devices/_common"]
-    os_dir = f"os/{o['id']}" if (SIDEQUEST / "os" / o["id"]).is_dir() else None
+        folders = ["knowledge/devices/_common"]
+    os_dir = f"knowledge/os/{o['id']}" if (SIDEQUEST / "knowledge" / "os" / o["id"]).is_dir() else None
     st = stacks()
     return {"generated": time.strftime("%Y-%m-%d %H:%M"), "dmi": ids,
             "device": {"id": dev.get("id") if dev else None, "name": dev.get("name") if dev else None,
                        "folders": [f for f in folders if (SIDEQUEST / f).is_dir()]},
             "os": o, "os_folder": os_dir,
-            "stack_folders": [f"stacks/{k}" for k in st if (SIDEQUEST / "stacks" / k).is_dir()],
+            "stack_folders": [f"knowledge/stacks/{k}" for k in st if (SIDEQUEST / "knowledge" / "stacks" / k).is_dir()],
             "cpu": cpu(), "gpu": gpu(), "memory": memory(), "displays": displays(), "storage": storage(),
             "controllers": controllers(), "power": power(), "software": st}
 

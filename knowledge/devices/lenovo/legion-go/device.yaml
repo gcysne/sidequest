@@ -22,6 +22,6 @@ power:
   tdp_control: steamos-manager TdpLimit1 (custom profile only)
   profiles: [low-power, balanced, performance, custom]
   performance_profile_limits_w: {sustained: 20, boost: 30, fast_boost: 35}
-  fan_control: none exposed by the kernel (no fan hwmon); see devices/lenovo/_common
+  fan_control: none exposed by the kernel (no fan hwmon); see knowledge/devices/lenovo/_common
 tested:
   - {os: steamos, version: 3.9.5, kernel: 7.2.7-valve2-2-neptune-72, decky: 3.3.0}

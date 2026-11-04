@@ -12,13 +12,13 @@ offer once, briefly ("This fixed X; other <device> owners will hit it too. Want 
 
 | It is... | Folder |
 |---|---|
-| True for one model | `devices/<vendor>/<model>/` (README "quirks"/"known-good settings", or `<skill>/` for scripts/services) |
-| True for a vendor's models | `devices/<vendor>/_common/` |
-| True for any handheld | `devices/_common/` or the skill itself |
-| About the OS (SteamOS, Bazzite...) | `os/<id>/` |
-| About an emulation suite/frontend | `stacks/<name>/` |
+| True for one model | `knowledge/devices/<vendor>/<model>/` (README "quirks"/"known-good settings", or `<skill>/` for scripts/services) |
+| True for a vendor's models | `knowledge/devices/<vendor>/_common/` |
+| True for any handheld | `knowledge/devices/_common/` or the skill itself |
+| About the OS (SteamOS, Bazzite...) | `knowledge/os/<id>/` |
+| About an emulation suite/frontend | `knowledge/stacks/<name>/` |
 | A better workflow | `skills/<skill>/SKILL.md` |
-| A new device | new `devices/<vendor>/<model>/` with `device.yaml` + `README.md` (see `devices/README.md`) |
+| A new device | new `knowledge/devices/<vendor>/<model>/` with `device.yaml` + `README.md` (see `knowledge/devices/README.md`) |
 
 Prefer extending an existing file over adding a new one. Scripts follow the repo's style (header comment with usage,
 no hard-coded user paths: use `lib/sqpaths.*`; services install as user units with `--install`/`--uninstall`).

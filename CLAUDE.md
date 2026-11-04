@@ -14,7 +14,7 @@ Not to be confused with `agent/AGENT.md`: that is the companion agent Sidequest 
 | Game Mode panel (Decky plugin: React frontend, Python backend) | `decky-plugin/` |
 | Companion agent installed on users' devices | `agent/` (AGENT.md, notebook templates) |
 | Workflows for the companion | `skills/<name>/` (SKILL.md + tools only that skill uses) |
-| Knowledge for some setups only | `devices/<vendor>/<model>/`, `devices/<vendor>/_common/`, `devices/_common/`, `os/<id>/`, `stacks/<name>/` |
+| Knowledge for some setups only (devices, OSes, emulation stacks) | `knowledge/` ([knowledge/README.md](knowledge/README.md)) |
 | Code shared by several skills | `lib/` (`steam-cdp/`, `sqpaths.*`, `notify`) |
 | Install / update / remove | `get.sh`, `install.sh`, `uninstall.sh` |
 | Checks | `ci/`, `.github/workflows/build.yml` |
@@ -22,7 +22,8 @@ Not to be confused with `agent/AGENT.md`: that is the companion agent Sidequest 
 ## Rules
 
 - **Device-agnostic.** No hard-coded model, resolution, button names, user names or paths in generic code. What
-  only applies to some devices goes in `devices/`, `os/` or `stacks/`; skills point there. Tools use `lib/sqpaths.*`.
+  only applies to some devices goes in `knowledge/` (devices, OSes, emulation stacks); skills point there. Tools use
+  `lib/sqpaths.*`.
 - **Privacy.** Never commit anything from a user's notebook, real IPs, hostnames, serials, MAC addresses, game
   libraries or personal paths. Examples use neutral values (`~/Claude`, `nas`).
 - **State facts with evidence.** Device knowledge says what was verified, on which OS version; mark the rest unverified.

@@ -5,7 +5,7 @@ description: Organize an emulation library - folder per system, No-Intro/Redump 
 
 # ROM library
 
-Paths and frontend details come from the stack folder (e.g. `stacks/emudeck/README.md`).
+Paths and frontend details come from the stack folder (e.g. `knowledge/stacks/emudeck/README.md`).
 
 ## Layout
 

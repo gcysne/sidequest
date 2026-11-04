@@ -16,7 +16,7 @@ virtual pads **by index**.
 
 - What's connected: `cat /proc/bus/input/devices` (names, vendor:product, bus 0003 USB / 0005 Bluetooth),
   `lsusb`, the hardware profile's Controllers section, `journalctl -b | grep -i -E 'hid|input|xpad'`.
-- Built-in controls: the device folder (`devices/<vendor>/<model>/controllers/`, README) says which daemon handles them
+- Built-in controls: the device folder (`knowledge/devices/<vendor>/<model>/controllers/`, README) says which daemon handles them
   (e.g. InputPlumber: `journalctl -b -u inputplumber`, `busctl --system tree org.shadowblip.InputPlumber`).
 - Live values: read a virtual pad's axes/buttons with `EVIOCGABS` ioctls on `/dev/input/eventN` (no root needed
   for the user's devices) while the user presses buttons.

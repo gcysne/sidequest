@@ -1,4 +1,4 @@
 # Code owners review pull requests for their area. Code owners push their own changes directly.
-# Device maintainers: add yourself next to your device folder (devices/<vendor>/<model>/).
+# Device maintainers: add yourself next to your device folder (knowledge/devices/<vendor>/<model>/).
 *                           @gcysne
-/devices/lenovo/            @gcysne
+/knowledge/devices/lenovo/            @gcysne

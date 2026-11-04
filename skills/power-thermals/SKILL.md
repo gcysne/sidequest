@@ -8,9 +8,9 @@ description: Power and thermal management on the handheld - TDP and performance 
 1. **What the device exposes:** `notes/hardware.md` → "Power and thermals" (SteamOS Manager interfaces, available
    profiles, TDP range, firmware power attributes, fan sensors/control, battery charge-limit support). Never assume
    another device's controls exist.
-2. **Device knowledge first:** `devices/<vendor>/<model>/power-thermals/`, `devices/<vendor>/_common/` (e.g. Lenovo:
+2. **Device knowledge first:** `knowledge/devices/<vendor>/<model>/power-thermals/`, `knowledge/devices/<vendor>/_common/` (e.g. Lenovo:
    the QAM TDP slider switches the firmware to a quiet fan table; use the performance profile on AC instead,
-   `devices/lenovo/_common/power-thermals/profile-on-ac/`).
+   `knowledge/devices/lenovo/_common/power-thermals/profile-on-ac/`).
 3. **Controls (no root):** SteamOS Manager on the user bus:
    `busctl --user set-property com.steampowered.SteamOSManager1 /com/steampowered/SteamOSManager1 com.steampowered.SteamOSManager1.PerformanceProfile1 PerformanceProfile s <profile>`;
    `TdpLimit1.TdpLimit u <watts>` (only in profiles that expose it); `CpuBoost1`, `GpuPerformanceLevel1`. These are

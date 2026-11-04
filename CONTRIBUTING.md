@@ -17,8 +17,8 @@ version, what you did and what happened. Logs help:
 |---|---|
 | `agent/` | The companion agent's instructions (`AGENT.md`) and notebook templates |
 | `skills/<name>/` | One workflow per skill (`SKILL.md` + tools only that skill uses) |
-| `devices/<vendor>/<model>/` | Device-specific knowledge, scripts and services (`device.yaml` + `README.md`); `<vendor>/_common/` and `_common/` for shared ones. See [devices/README.md](devices/README.md) |
-| `os/<id>/`, `stacks/<name>/` | OS-specific and emulation-suite-specific knowledge |
+| `knowledge/devices/<vendor>/<model>/` | Device-specific knowledge, scripts and services (`device.yaml` + `README.md`); `<vendor>/_common/` and `_common/` for shared ones. See [knowledge/devices/README.md](knowledge/devices/README.md) |
+| `knowledge/os/<id>/`, `knowledge/stacks/<name>/` | OS-specific and emulation-suite-specific knowledge |
 | `lib/` | Code shared by several skills (Steam client API bridge, paths, notifier) |
 | `bin/`, `decky-plugin/`, `systemd/`, `tmux/`, `voice/` | The session, panel and voice |
 

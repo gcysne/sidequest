@@ -24,7 +24,7 @@ Treat the user as capable. Explain what you do and why, briefly; don't lecture.
 
 | What | Where |
 |---|---|
-| This file and Sidequest's knowledge base | `~/.local/lib/sidequest/` (`agent/`, `skills/`, `devices/`, `os/`, `stacks/`, `lib/`) |
+| This file and Sidequest's knowledge base | `~/.local/lib/sidequest/` (`agent/`, `skills/`, `knowledge/`, `lib/`) |
 | Skills (step-by-step workflows) | `.claude/skills/` in this folder (links to `~/.local/lib/sidequest/skills/`) |
 | Your notebook | `notes/` in this folder |
 | Sidequest settings | `~/.config/sidequest/config` (`SIDEQUEST_SRC` = the git clone it was installed from) |
@@ -32,14 +32,14 @@ Treat the user as capable. Explain what you do and why, briefly; don't lecture.
 
 ### Device, OS and stack knowledge
 
-Knowledge that only applies to some setups lives in folders, most specific first:
+Knowledge that only applies to some setups lives in `knowledge/`, most specific first:
 
-- **Device:** `devices/<vendor>/<model>/` → `devices/<vendor>/_common/` → `devices/_common/`. Each model folder has
-  a `device.yaml` (how to recognise it, display modes, controllers, power and fan controls, tested versions) and a
-  `README.md` (quirks, known-good settings). Subfolders are named after skills (`power-thermals/`, `controllers/`...)
+- **Device:** `knowledge/devices/<vendor>/<model>/` → `knowledge/devices/<vendor>/_common/` →
+  `knowledge/devices/_common/`. Each model folder has a `device.yaml` (how to recognise it, display modes,
+  controllers, power and fan controls, tested versions) and a `README.md` (quirks, known-good settings). Subfolders are named after skills (`power-thermals/`, `controllers/`...)
   and hold that device's scripts and services for the skill.
-- **OS:** `os/steamos/` (and `os/<other>/` as they are contributed).
-- **Software stack:** `stacks/<name>/` (e.g. `stacks/emudeck/` for EmuDeck-specific paths and quirks).
+- **OS:** `knowledge/os/steamos/` (and `knowledge/os/<other>/` as they are contributed).
+- **Software stack:** `knowledge/stacks/<name>/` (e.g. `knowledge/stacks/emudeck/` for EmuDeck-specific paths and quirks).
 
 `notes/hardware.md` says which device, OS and stacks this machine matched (hardware-profile skill). Before giving
 device-specific advice, read the matching folders. If the device has no folder, say so: the generic advice may
@@ -61,8 +61,8 @@ not fit, and the user can help by contributing one (contribute skill).
 
 ## Ground rules
 
-- **The OS rules come first.** On SteamOS read `os/steamos/README.md`: the root filesystem is read-only and replaced
-  on every update, so prefer Flatpak, the home folder and Distrobox; root-filesystem changes only as a last resort,
+- **The OS rules come first.** On SteamOS read `knowledge/os/steamos/README.md`: the root filesystem is read-only
+  and replaced on every update, so prefer Flatpak, the home folder and Distrobox; root-filesystem changes only as a last resort,
   with the user's explicit approval, logged so they can be redone after updates.
 - **Plan before changing anything.** Before a change to the system, say what, why, the risk and how to undo it.
   Read-only diagnostics need no approval.
@@ -137,6 +137,6 @@ Use the skill that fits the task; each has the detailed workflow and its tools.
 
 Sidequest is open source and grows from real sessions. When you solved a problem that other users of this device,
 OS or stack would hit (a quirk and its fix, a tuned profile, a script or service, a better workflow), **offer** to
-contribute it with the `contribute` skill: it goes into the right `devices/`, `os/`, `stacks/` or `skills/` folder,
-personal data removed, from the user's own GitHub account, after the user has seen the change. Never submit
-anything without the user's explicit yes.
+contribute it with the `contribute` skill: it goes into the right `knowledge/devices/`, `knowledge/os/`,
+`knowledge/stacks/` or `skills/` folder, personal data removed, from the user's own GitHub account, after the user
+has seen the change. Never submit anything without the user's explicit yes.

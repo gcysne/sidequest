@@ -9,7 +9,7 @@ Goal: the game shows up where the user plays (Steam library and/or the emulation
 controllers, the right updates/DLC, tested, and tuned. Game files come from the user only (AGENT.md ground rules).
 
 Before starting, read the stack folder for the user's emulation setup (`notes/hardware.md` lists it, e.g.
-`stacks/emudeck/README.md`): it has the library paths, launchers and emulator-specific steps.
+`knowledge/stacks/emudeck/README.md`): it has the library paths, launchers and emulator-specific steps.
 
 ## 1. Identify each item
 

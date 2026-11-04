@@ -96,10 +96,11 @@ fi
 
 # 3. Scripts and knowledge base: copy to ~/.local/lib/sidequest, link commands into ~/.local/bin
 mkdir -p "$LIB" "$BIN"
-for d in bin lib tmux agent skills devices os stacks ci; do
+for d in bin lib tmux agent skills knowledge ci; do
     rm -rf "${LIB:?}/$d"
     cp -r "$SRC/$d" "$LIB/$d"
 done
+rm -rf "${LIB:?}/devices" "${LIB:?}/os" "${LIB:?}/stacks"   # pre-0.1.0 layout (now under knowledge/)
 find "$LIB" -name __pycache__ -prune -exec rm -rf {} +
 python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$SRC/decky-plugin/package.json" > "$LIB/VERSION"
 chmod +x "$LIB"/bin/*

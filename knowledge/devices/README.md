@@ -3,7 +3,7 @@
 Everything that only applies to some handhelds lives here, so the skills (`skills/`) stay generic.
 
 ```
-devices/
+knowledge/devices/
   _common/                 any SteamOS handheld
   <vendor>/_common/        shared by a vendor's models (drivers, vendor quirks)
   <vendor>/<model>/        one model (or a few that behave the same)
@@ -18,7 +18,7 @@ picks the model folder by matching `device.yaml` against the firmware's DMI fiel
 ## Adding a device
 
 1. Run the hardware-profile skill on the device: it prints the DMI fields (`sys_vendor`, `product_name`, ...).
-2. Create `devices/<vendor>/<model>/` (lower-case, hyphens: `asus/rog-ally-x`). Split a model into separate folders
+2. Create `knowledge/devices/<vendor>/<model>/` (lower-case, hyphens: `asus/rog-ally-x`). Split a model into separate folders
    **only when settings, controls or quirks differ**; otherwise add more `match` rules to one folder.
 3. Write `device.yaml` (fields below) and a `README.md`. Only state facts you verified on the device; mark the rest
    as unverified.
@@ -28,7 +28,7 @@ picks the model folder by matching `device.yaml` against the firmware's DMI fiel
 
 | Field | Required | Meaning |
 |---|---|---|
-| `id` | yes | Folder path below `devices/`, e.g. `lenovo/legion-go` |
+| `id` | yes | Folder path below `knowledge/devices/`, e.g. `lenovo/legion-go` |
 | `name` | yes | Human name |
 | `match` | yes | List of rules; a rule matches when **all** its DMI fields equal the device's (case-insensitive) |
 | `maintainers` | yes | GitHub handles who review changes to this folder |

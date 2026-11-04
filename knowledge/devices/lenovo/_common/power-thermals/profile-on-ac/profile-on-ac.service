@@ -2,7 +2,7 @@
 Description=Sidequest: Lenovo performance profile on AC while a game runs
 
 [Service]
-ExecStart=%h/.local/lib/sidequest/devices/lenovo/_common/power-thermals/profile-on-ac/profile-on-ac
+ExecStart=%h/.local/lib/sidequest/knowledge/devices/lenovo/_common/power-thermals/profile-on-ac/profile-on-ac
 Restart=always
 RestartSec=10
 
