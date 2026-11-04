@@ -1,4 +1,2 @@
-# Code owners review pull requests for their area. Code owners push their own changes directly.
-# Device maintainers: add yourself next to your device folder (knowledge/devices/<vendor>/<model>/).
-*                           @gcysne
-/knowledge/devices/lenovo/            @gcysne
+# The maintainer owns everything and reviews every pull request (required by the branch ruleset on main).
+*       @gcysne
