@@ -53,3 +53,21 @@ folder.
 
 Most of this project was written by Claude (Anthropic's Claude Code), directed and tested by its creator. AI-assisted
 contributions are welcome; you are responsible for having read and tested what you submit.
+
+## Pull request checks
+
+Only the maintainer pushes to `main`; every other change comes as a pull request, reviewed by the code owner
+(`.github/CODEOWNERS`). Each pull request gets two automatic security checks:
+
+- **PR security scan** (required, `.github/security/pr_scan.py`): reads what the pull request adds and **rejects it
+  upfront** (closes it) on binaries or archives, prompt injection or hidden Unicode, obfuscated, encoded or minified
+  code, long numeric or encoded arrays, downloads or installs from sources not listed in
+  `.github/security/allowed-sources.txt`, piping downloads into a shell, reverse shells, miners, exfiltration
+  endpoints, sudoers or setuid changes, destructive commands on `/` or `~`, package install hooks, and changes to
+  `.github/` or `CODEOWNERS`. Risky commands such as `rm -rf`, `sudo`, process kills or credential paths are
+  reported as warnings in a review for the maintainer to check.
+- **AI security review** (advisory, `.github/security/ai_review.py`): Claude reads the diff as text, with no tools,
+  and comments on anything malicious or unsafe the pattern scan can't see.
+
+Needs a tool from a new source? Say so in the pull request: the maintainer decides whether it goes on the allowed
+list. False positive? Explain it in a comment; the maintainer can add the `security-reviewed` label.
