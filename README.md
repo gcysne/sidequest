@@ -30,7 +30,7 @@ and your phone.
 
 The Claude panel in Game Mode, opened from the ✳ icon in Steam's status bar:
 
-<img src="docs/images/sidequest-claude-panel.png" width="600" alt="Claude Code running in the Sidequest panel in Game Mode, greeting the user">
+<img src="docs/images/sidequest-claude-panel.png" width="800" alt="Claude Code running in the Sidequest panel in Game Mode, greeting the user, over the Steam home screen">
 
 <img src="docs/images/sidequest-statusbar.png" width="350" alt="Steam's status bar with the Sidequest icon">
 
