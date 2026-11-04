@@ -47,9 +47,9 @@ Not to be confused with `agent/AGENT.md`: that is the companion agent Sidequest 
 python3 ci/check-devices.py
 shellcheck -S warning get.sh install.sh uninstall.sh lib/*.sh voice/install-voice.sh decky-plugin/install.sh \
   bin/claude-session bin/claude-session-inner bin/claude-open-url \
-  $(grep -rlE '^#!/usr/bin/env bash|^#!/bin/bash' skills devices os stacks lib)
+  $(grep -rlE '^#!/usr/bin/env bash|^#!/bin/bash' skills knowledge lib)
 for f in decky-plugin/main.py bin/claude-notify bin/claude-tts bin/sidequest-update-check \
-  $(grep -rlE '^#!/usr/bin/env python3' skills devices lib); do python3 -m py_compile "$f"; done
+  $(grep -rlE '^#!/usr/bin/env python3' skills knowledge lib); do python3 -m py_compile "$f"; done
 ci/test-install.sh
 (cd decky-plugin && corepack pnpm run typecheck && corepack pnpm run build)
 ```
