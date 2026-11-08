@@ -244,6 +244,18 @@ def _version_key(text: str):
     return (*nums, 0, tuple((0, int(x), "") if x.isdigit() else (1, 0, x) for x in pre.split(".")))
 
 
+def _ssl_context():
+    """HTTPS context with the system's CA certificates. Decky's bundled Python looks for them in its own build paths,
+    so plain urlopen fails there with CERTIFICATE_VERIFY_FAILED."""
+    import ssl
+    ctx = ssl.create_default_context()
+    for f in ("/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/cert.pem", "/etc/pki/tls/certs/ca-bundle.crt"):
+        if os.path.isfile(f):
+            ctx.load_verify_locations(cafile=f)
+            break
+    return ctx
+
+
 def _check_release(force: bool) -> dict:
     """Newest GitHub release, pre-releases included (Sidequest's alpha releases are marked as pre-releases, which
     GitHub's releases/latest ignores)."""
@@ -257,12 +269,12 @@ def _check_release(force: bool) -> dict:
         cache = json.loads(UPDATE_CACHE.read_text())
     except (OSError, ValueError):
         cache = {}
-    if force or time.time() - cache.get("checked", 0) > 86400 or "url" not in cache:
+    if force or time.time() - cache.get("checked", 0) > 86400 or "url" not in cache or cache.get("error"):
         cache = {"checked": time.time()}
         try:
             req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases?per_page=10",
                                          headers={"Accept": "application/vnd.github+json", "User-Agent": "sidequest"})
-            with urllib.request.urlopen(req, timeout=15) as r:
+            with urllib.request.urlopen(req, timeout=15, context=_ssl_context()) as r:
                 rels = [x for x in json.load(r) if not x.get("draft")]
             if rels:
                 best = max(rels, key=lambda x: _version_key(x.get("tag_name", "")))

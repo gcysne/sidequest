@@ -32,7 +32,7 @@ def main():
         cache = json.loads(STATE.read_text())
     except (OSError, ValueError):
         cache = {}
-    if time.time() - cache.get("checked", 0) > DAY:
+    if time.time() - cache.get("checked", 0) > DAY or "latest" not in cache:
         try:
             req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases?per_page=5",
                                          headers={"Accept": "application/vnd.github+json", "User-Agent": "sidequest"})
