@@ -66,6 +66,11 @@ folder.
   with `--install` / `--uninstall`.
 - Test in Game Mode before opening a pull request, and say in the PR which device and SteamOS version you used.
 
+## Releases
+
+See [RELEASING.md](RELEASING.md): versions, tags, the alpha → beta → 1.0 plan and when to use a release
+branch.
+
 ## Use of AI
 
 Most of this project was written by Claude (Anthropic's Claude Code), directed and tested by its creator. AI-assisted
