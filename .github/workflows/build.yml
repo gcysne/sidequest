@@ -27,6 +27,9 @@ jobs:
           python3 -m py_compile decky-plugin/main.py bin/claude-notify bin/claude-tts bin/sidequest-update-check
           for f in $(grep -rlE '^#!/usr/bin/env python3' skills knowledge lib); do python3 -m py_compile "$f"; done
 
+      - name: Update check tests
+        run: python3 ci/test-update-check.py
+
       - name: Security scanner tests
         run: python3 -m unittest discover -s .github/security
 

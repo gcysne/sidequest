@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: the session-start update check missed updates that only change the pre-release label
+  (`0.2.0-alpha` → `0.2.0-beta.1`, `-alpha` → `-alpha.2`); it now orders versions like the plugin does.
+
 ## 0.1.0-alpha (2026-11-03)
 
 First public alpha.

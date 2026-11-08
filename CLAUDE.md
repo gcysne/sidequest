@@ -51,6 +51,7 @@ shellcheck -S warning get.sh install.sh uninstall.sh lib/*.sh voice/install-voic
 for f in decky-plugin/main.py bin/claude-notify bin/claude-tts bin/sidequest-update-check \
   $(grep -rlE '^#!/usr/bin/env python3' skills knowledge lib); do python3 -m py_compile "$f"; done
 ci/test-install.sh
+python3 ci/test-update-check.py
 (cd decky-plugin && corepack pnpm run typecheck && corepack pnpm run build)
 ```
 
@@ -63,5 +64,5 @@ Clean up `__pycache__` folders afterwards. Test plugin and session changes in Ga
 - One logical change per commit; one commit per skill when adding several.
 - Contributors work on branches and open pull requests; code owners (`.github/CODEOWNERS`) review them.
 - Never rewrite published history or force-push unless the maintainer explicitly asks for it.
-- Releases: bump `decky-plugin/package.json` (`0.x.y-alpha`), update `CHANGELOG.md`, tag `v<version>`; CI attaches
-  `sidequest.zip` to the release.
+- Releases: follow [RELEASING.md](RELEASING.md) (bump `decky-plugin/package.json`, CHANGELOG, annotated tag
+  `v<version>`; CI attaches `sidequest.zip`). Never move or re-use a published tag.

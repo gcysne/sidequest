@@ -13,8 +13,14 @@ REPO = "gcysne/sidequest"
 DAY = 86400
 
 
-def vtuple(v):
-    return tuple(int(x) for x in re.findall(r"\d+", v)[:3]) + ((0,) if "-" not in v else (-1,))
+def version_key(text):
+    """Semver order: 0.2.0-alpha < 0.2.0-alpha.2 < 0.2.0-beta.1 < 0.2.0 (same as the plugin's _version_key)."""
+    main, _, pre = str(text or "").strip().lstrip("vV").partition("-")
+    nums = [int(m.group()) if (m := re.match(r"\d+", x)) else 0 for x in main.split(".")]
+    nums = (nums + [0, 0, 0])[:3]
+    if not pre:
+        return (*nums, 1, ())
+    return (*nums, 0, tuple((0, int(x), "") if x.isdigit() else (1, 0, x) for x in pre.split(".")))
 
 
 def main():
@@ -32,13 +38,13 @@ def main():
                                          headers={"Accept": "application/vnd.github+json", "User-Agent": "sidequest"})
             rels = json.load(urllib.request.urlopen(req, timeout=5))
             tags = [r["tag_name"].lstrip("v") for r in rels if not r.get("draft")]
-            cache = {"checked": time.time(), "latest": max(tags, key=vtuple) if tags else installed}
+            cache = {"checked": time.time(), "latest": max(tags, key=version_key) if tags else installed}
             STATE.parent.mkdir(parents=True, exist_ok=True)
             STATE.write_text(json.dumps(cache))
         except Exception:
             return
     latest = cache.get("latest", installed)
-    if vtuple(latest) > vtuple(installed):
+    if version_key(latest) > version_key(installed):
         print(f"Sidequest update available: installed {installed}, latest {latest} "
               f"(https://github.com/{REPO}/releases). Tell the user and ask whether to update now "
               f"(sidequest-update skill). Don't update without a yes.")
