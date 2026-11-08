@@ -250,6 +250,9 @@ a separate one). `claude-session --help` lists the other commands.
 CI (`.github/workflows/build.yml`) lints the scripts, builds the plugin and attaches `sidequest.zip` to tagged releases.
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
+**Found a bug?** Open an issue, then ask Claude to fix it, validate it and open a pull request too: see
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Credits
 
 Created by **Gabriel Cysne** ([@gcysne](https://github.com/gcysne)), who had the idea, leads the project and tests every build.

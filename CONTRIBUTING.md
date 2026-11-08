@@ -2,6 +2,23 @@
 
 Thanks for helping. Sidequest is an alpha, so reports from new devices are the most useful contribution.
 
+> [!IMPORTANT]
+> **IF YOU OPEN AN ISSUE, ASK CLAUDE TO FIX IT, VALIDATE IT AND OPEN A PULL REQUEST TOO.**
+>
+> This project is written with [Claude Code](https://claude.com/claude-code), and you can use it the same way. In
+> your clone, give Claude the issue and ask it to:
+>
+> 1. **Fix it**: find the cause and make the smallest change that solves it.
+> 2. **Validate it**: run the checks in [Changing code](#changing-code), then test the fix on your device.
+> 3. **Open a pull request** against `main` that links the issue (`Fixes #123`) and says which device and SteamOS
+>    version you tested on.
+>
+> Read the change before you submit it: you're responsible for what you send. Every pull request goes through the
+> automatic security checks and the maintainer's review ([Pull request checks](#pull-request-checks)).
+>
+> On a handheld with Sidequest, just tell the companion "fix this issue and open a pull request": its `contribute`
+> skill removes personal data and shows you the change before anything is sent.
+
 ## Reporting a problem
 
 Open an issue with: device (e.g. Steam Deck OLED), SteamOS version and channel (Settings > System), Decky Loader
