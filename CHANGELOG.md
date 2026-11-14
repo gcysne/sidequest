@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `controllers` skill: rumble for Bluetooth "Xbox Wireless Controller" clones (verified on the Machenike G5 Pro):
+  find the layer that loses it with the new `rumble-test` tool (raw HID report, kernel, Steam virtual pad), bind
+  the pad to `hid-microsoft` with its force-feedback quirk, restart Steam, persist with a boot service.
+
 ## 0.1.1-alpha (2026-11-08)
 
 - Fixed: the About tab's update check failed with a certificate error (CERTIFICATE_VERIFY_FAILED): Decky's bundled
