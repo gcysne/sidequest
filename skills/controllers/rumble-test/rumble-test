@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Test controller rumble at each layer, to find where it gets lost.
+
+  rumble-test --list                 controllers with their driver, input node and whether the kernel offers rumble
+  rumble-test --evdev /dev/input/eventN [--ms 1000] [--strength 60]
+                                     play a rumble effect on an input device: the real pad (kernel driver path)
+                                     or a Steam virtual pad "Microsoft X-Box 360 pad N" (what a game does)
+  rumble-test --xbox-bt-raw /dev/hidrawN
+                                     send the Xbox Bluetooth rumble output report (ID 3) straight to the pad,
+                                     bypassing drivers and Steam: does the hardware rumble at all?
+
+No root needed for the user's own devices (uaccess). Python standard library only.
+"""
+import argparse, fcntl, glob, os, struct, sys, time
+
+EV_FF, FF_RUMBLE = 0x15, 0x50
+EVIOCSFF = 0x40304580   # _IOW('E', 0x80, struct ff_effect), 48 bytes on 64-bit
+EVIOCRMFF = 0x40044581  # _IOW('E', 0x81, int)
+
+
+def read(path, default=""):
+    try:
+        with open(path) as f:
+            return f.read().strip()
+    except OSError:
+        return default
+
+
+def list_devices():
+    for hid in sorted({os.path.realpath(p) for p in glob.glob("/sys/class/hidraw/*/device")}):
+        hid_id = os.path.basename(hid)
+        drv = os.path.basename(os.path.realpath(f"{hid}/driver")) if os.path.exists(f"{hid}/driver") else "-"
+        raws = [os.path.basename(p) for p in glob.glob(f"{hid}/hidraw/hidraw*")]
+        for inp in sorted(glob.glob(f"{hid}/input/input*")):
+            ev = int(read(f"{inp}/capabilities/ev", "0"), 16)
+            events = [os.path.basename(p) for p in glob.glob(f"{inp}/event*")]
+            print(f"{hid_id}  driver={drv}  {read(f'{inp}/name')!r}  "
+                  f"{' '.join('/dev/input/' + e for e in events)}  {' '.join('/dev/' + r for r in raws)}  "
+                  f"rumble={'yes' if ev & (1 << EV_FF) else 'no'}")
+    for inp in sorted(glob.glob("/sys/class/input/input*")):
+        name = read(f"{inp}/name")
+        if name.startswith("Microsoft X-Box 360 pad"):
+            events = [os.path.basename(p) for p in glob.glob(f"{inp}/event*")]
+            ev = int(read(f"{inp}/capabilities/ev", "0"), 16)
+            print(f"steam-virtual  {name!r}  {' '.join('/dev/input/' + e for e in events)}  "
+                  f"rumble={'yes' if ev & (1 << EV_FF) else 'no'}")
+
+
+def evdev_rumble(path, ms, strength):
+    mag = min(0xFFFF, int(0xFFFF * strength / 100))
+    fd = os.open(path, os.O_RDWR)
+    try:
+        # struct ff_effect: type, id, direction, trigger{button, interval}, replay{length, delay}, pad, union{rumble}
+        eff = bytearray(struct.pack("<HhHHHHH2xHH", FF_RUMBLE, -1, 0, 0, 0, ms, 0, mag, mag).ljust(48, b"\0"))
+        fcntl.ioctl(fd, EVIOCSFF, eff, True)
+        eid = struct.unpack_from("<h", eff, 2)[0]
+        os.write(fd, struct.pack("<qqHHi", 0, 0, EV_FF, eid, 1))
+        time.sleep(ms / 1000 + 0.3)
+        fcntl.ioctl(fd, EVIOCRMFF, eid)
+    finally:
+        os.close(fd)
+    print(f"played {ms} ms at {strength}% on {path}")
+
+
+def xbox_bt_raw(path, ms, strength):
+    mag = max(0, min(100, strength))
+    # report 3: enable mask (bits: weak, strong, right trigger, left trigger), magnitudes LT, RT, strong, weak (0-100),
+    # duration (10 ms units), start delay, loop count
+    report = bytes([0x03, 0x0F, 0, 0, mag, mag, min(255, ms // 10), 0, 0])
+    with open(path, "wb", buffering=0) as f:
+        f.write(report)
+    print(f"sent Xbox BT rumble report to {path}: {report.hex(' ')}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument("--list", action="store_true")
+    g.add_argument("--evdev", metavar="/dev/input/eventN")
+    g.add_argument("--xbox-bt-raw", metavar="/dev/hidrawN")
+    ap.add_argument("--ms", type=int, default=1000)
+    ap.add_argument("--strength", type=int, default=60, help="percent")
+    a = ap.parse_args()
+    try:
+        if a.list:
+            list_devices()
+        elif a.evdev:
+            evdev_rumble(a.evdev, a.ms, a.strength)
+        else:
+            xbox_bt_raw(a.xbox_bt_raw, a.ms, a.strength)
+    except OSError as e:
+        sys.exit(f"rumble-test: {e}")
+
+
+if __name__ == "__main__":
+    main()
