@@ -1,0 +1,6 @@
+[Unit]
+Description=Sidequest: move the Legion Go controller to Steam slot 0 (Player 1)
+
+[Service]
+Type=oneshot
+ExecStart=@EXEC@

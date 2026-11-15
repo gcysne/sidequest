@@ -35,6 +35,13 @@ Fix options:
    process to exit and then edits the file, and restart Steam with `SteamClient.User.StartRestart(false)` (keeps the
    Game Mode session). Verify with `SteamClient.Input.GetControllerMappingString(<index>)`.
 
+## Built-in controller isn't Player 1
+
+Player order is Steam's slot order (`virtualgamepadinfo.txt`). A built-in controller that re-enumerates (detachable
+controllers, mode switches) can come back after external pads and lose slot 0. Reorder in Quick Access > Controller
+settings > Reorder Controllers; if it keeps happening, check the device folder's `controllers/` for an optional
+service that keeps it in slot 0 (Legion Go: `legion-p1`). Install only if the user wants that.
+
 ## Emulators
 
 - Bind players 1-4 to Steam pads 0-3 by index. Emulator-specific settings and pitfalls (e.g. EmuDeck's AutoMap hiding

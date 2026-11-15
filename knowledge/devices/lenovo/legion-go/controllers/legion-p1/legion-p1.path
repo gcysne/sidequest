@@ -1,0 +1,8 @@
+[Unit]
+Description=Sidequest: keep the Legion Go controller as Player 1 when Steam's controller slots change
+
+[Path]
+PathChanged=%h/.local/share/Steam/config/virtualgamepadinfo.txt
+
+[Install]
+WantedBy=default.target

@@ -16,6 +16,10 @@ Maintainers: @gcysne. Facts verified on a 83E1 (Z1 Extreme, BIOS N3CN39WW), Stea
   (HHD)**: it fights InputPlumber for the controllers and its installer refuses SteamOS.
 - On detach the receiver re-enumerates (`17ef:6182` → `6184` for a few seconds → `6182`); InputPlumber re-attaches it.
   Desktop Steam's controller list may not refresh; test in Game Mode.
+- After such a re-enumeration the built-in controller comes back **after** external pads already connected, so Steam
+  makes it Player 2+ (Ryujinx and other by-index bindings then give Player 1 to the external pad). Fix by hand in
+  Quick Access > Controller settings > Reorder Controllers, or offer the optional `controllers/legion-p1/` service,
+  which moves it back to slot 0 whenever the slots change.
 - The back buttons (Y1–Y3, M2, M3) reach games through Steam Input but not Steam's own UI (Decky plugins can't use them).
 
 ## Power and thermals

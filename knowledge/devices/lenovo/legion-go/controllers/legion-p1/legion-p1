@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Keep the Legion Go's built-in controller in Steam's controller slot 0 (Player 1). Optional; Legion Go only.
+#
+# Why: when the built-in controller re-enumerates (controllers detached and reattached, or a mode switch), InputPlumber
+# brings its "Legion Go Controller" back after any external pads, and Steam gives it a later slot. Games and emulators
+# that bind Player 1 to Steam pad 0 (e.g. Ryujinx, Dolphin with controller-sync) then get the external pad as Player 1.
+# This moves it back up with SteamClient.Input.SwapControllerOrder, one adjacent swap at a time, the call behind
+# Quick Access > Controller settings > Reorder Controllers, so the other pads keep their order.
+# Needs Steam's devtools port (enabled by Decky Loader); without it the run does nothing.
+#
+#   legion-p1                 check once and fix (run by legion-p1.path when Steam's slot file changes)
+#   legion-p1 --status        print Steam's slots and what a run would do
+#   legion-p1 --install       install and start the user units;  --uninstall: stop and remove them
+set -u
+HERE="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=../../../../../../lib/sqpaths.sh
+. "$HERE/../../../../../../lib/sqpaths.sh"
+UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+LOG="$SQ_STATE/legion-p1.log"
+VID=0x28de PID=0x12fe   # InputPlumber's Legion Go Controller as Steam lists it
+
+case "${1:-}" in
+    --install)
+        mkdir -p "$UNIT_DIR"
+        cp "$HERE/legion-p1.path" "$UNIT_DIR/"
+        sed "s#@EXEC@#$HERE/legion-p1#" "$HERE/legion-p1.service.in" > "$UNIT_DIR/legion-p1.service"
+        systemctl --user daemon-reload && systemctl --user enable --now legion-p1.path
+        echo "installed legion-p1.path; log: $LOG"; exit 0 ;;
+    --uninstall)
+        systemctl --user disable --now legion-p1.path
+        rm -f "$UNIT_DIR"/legion-p1.{path,service}; systemctl --user daemon-reload
+        echo "removed legion-p1 units"; exit 0 ;;
+    --status) DRY=true ;;
+    "") DRY=false ;;
+    *) sed -n '2,15p' "$0"; exit 2 ;;
+esac
+
+curl -s -m 2 http://127.0.0.1:8080/json >/dev/null || { $DRY && echo "Steam devtools not reachable (is Steam running, Decky installed?)"; exit 0; }
+JS=$(mktemp --suffix=.js); trap 'rm -f "$JS"' EXIT
+cat > "$JS" <<JS
+(async () => {
+  const DRY = $DRY;
+  const cs = window.ControllerStore;
+  if (!cs || !SteamClient.Input.SwapControllerOrder) return "Steam API missing (Steam update?)";
+  const list = cs.GetControllersSorted(true);
+  const slots = list.map(c => Number(c.nXInputIndex) + ":" + c.strName).join(", ");
+  const leg = list.find(c => c.unVendorID == $VID && c.unProductID == $PID);
+  if (!leg) return "no Legion Go controller [" + slots + "]";
+  const k = Number(leg.nXInputIndex);
+  if (k <= 0) return "ok, Legion Go in slot " + k + " [" + slots + "]";
+  if (DRY) return "would move Legion Go from slot " + k + " to 0 [" + slots + "]";
+  for (let i = k; i > 0; i--) SteamClient.Input.SwapControllerOrder(i, i - 1);
+  return "moved Legion Go from slot " + k + " to 0 [" + slots + "]";
+})()
+JS
+$DRY || sleep 2   # let Steam finish assigning slots
+res=$(sq_steam_js "$JS" 2>&1 | tail -1)
+if $DRY; then echo "$res"; else mkdir -p "$SQ_STATE"; echo "$(date '+%F %T') $res" >> "$LOG"; fi
