@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Legion Go: optional `legion-p1` service (`knowledge/devices/lenovo/legion-go/controllers/legion-p1/`) keeps the
+  built-in controller as Player 1 when it reconnects after an external pad (detach/reattach, mode switch).
+
 ## 0.1.1-alpha (2026-11-08)
 
 - Fixed: the About tab's update check failed with a certificate error (CERTIFICATE_VERIFY_FAILED): Decky's bundled
